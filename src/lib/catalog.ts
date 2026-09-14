@@ -101,10 +101,10 @@ export async function fetchSettings(): Promise<StoreSettings> {
   if (error) throw error;
   return (
     (data as StoreSettings) ?? {
-      whatsapp: "5527988291158",
-      welcome_message: "A leveza também é poder.",
+      whatsapp: "5551992896189",
+      welcome_message: "Mais do que acessórios, identidade.",
       about_text: "",
-      instagram_url: "https://instagram.com/olivetreeacessorios",
+      instagram_url: "https://instagram.com/useolivetree",
     }
   );
 }
@@ -139,7 +139,7 @@ export function whatsappLink(
 ) {
   const digits = (phone || "").replace(/\D/g, "").slice(0, 15);
   const parts = [
-    `Olá! Tenho interesse na peça "${product.name.slice(0, 120)}"`,
+    `Olá! Tenho interesse no óculos "${product.name.slice(0, 120)}"`,
     size ? `Tamanho: ${size.slice(0, 20)}` : null,
     color ? `Cor: ${color.slice(0, 30)}` : null,
   ].filter(Boolean);

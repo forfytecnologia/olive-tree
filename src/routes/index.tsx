@@ -38,7 +38,7 @@ function Index() {
       <section className="relative">
         <img
           src="/images/hero.jpg"
-          alt="Homem com camisa de linho na praia ao entardecer"
+          alt="Mulher usando óculos de sol Olive Tree"
           width={1920}
           height={1210}
           fetchPriority="high"
@@ -76,7 +76,7 @@ function Index() {
         <div className="mx-auto max-w-3xl px-5 py-20 text-center">
           <p className="eyebrow">A marca</p>
           <p className="mt-4 text-xl leading-relaxed sm:text-2xl">
-            Praia chique. Urbano minimalista. Natural. Atemporal.
+            Mais do que acessórios, identidade. Óculos escolhidos a dedo para você.
           </p>
           <Link
             to="/sobre"

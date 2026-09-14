@@ -30,11 +30,11 @@ export const Route = createFileRoute("/produto/$slug")({
   component: ProdutoPage,
 });
 
-const SIZE_TABLE = [
-  ["P", "94–98 cm", "76–80 cm"],
-  ["M", "99–104 cm", "81–86 cm"],
-  ["G", "105–110 cm", "87–92 cm"],
-  ["GG", "111–118 cm", "93–100 cm"],
+const DETAILS = [
+  ["Proteção", "Lentes com proteção UV400 contra raios UVA e UVB."],
+  ["Acompanha", "Case, flanela de limpeza e certificado de garantia."],
+  ["Entrega", "Enviamos para todo o Brasil. Entrega em mãos na Grande Porto Alegre."],
+  ["Troca", "Até 7 dias após o recebimento, sem uso e na embalagem original."],
 ];
 
 function ProdutoPage() {
@@ -237,27 +237,14 @@ function ProdutoPage() {
             Entrega para todo o Brasil · frete grátis acima de R$ 350
           </p>
 
-          <div className="mt-12">
-            <p className="eyebrow mb-3">Tabela de tamanhos</p>
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="py-2 font-normal">Tam.</th>
-                  <th className="py-2 font-normal">Peito</th>
-                  <th className="py-2 font-normal">Cintura</th>
-                </tr>
-              </thead>
-              <tbody>
-                {SIZE_TABLE.map((row) => (
-                  <tr key={row[0]} className="border-b border-border/60">
-                    <td className="py-2">{row[0]}</td>
-                    <td className="py-2 text-muted-foreground">{row[1]}</td>
-                    <td className="py-2 text-muted-foreground">{row[2]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <dl className="mt-12 space-y-4">
+            {DETAILS.map(([title, text]) => (
+              <div key={title} className="border-b border-border/60 pb-4">
+                <dt className="text-sm">{title}</dt>
+                <dd className="mt-1 text-sm leading-relaxed text-muted-foreground">{text}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </div>
     </SiteLayout>
