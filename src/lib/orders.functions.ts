@@ -7,6 +7,40 @@ import { z } from "zod";
  */
 const idSchema = z.object({ id: z.string().uuid() });
 
+export type OrderView = {
+  id: string;
+  order_number: number;
+  customer_email: string;
+  zip: string;
+  street: string;
+  number: string;
+  complement: string;
+  district: string;
+  city: string;
+  state: string;
+  shipping_carrier: string;
+  shipping_service: string;
+  shipping_days: number;
+  shipping_price: number;
+  subtotal: number;
+  total: number;
+  payment_method: string;
+  payment_status: string;
+  fulfillment_status: string;
+  tracking_code: string;
+  created_at: string;
+  order_items: Array<{
+    id: string;
+    product_name: string;
+    product_slug: string;
+    image_url: string;
+    size: string;
+    color: string;
+    quantity: number;
+    unit_price: number;
+  }>;
+};
+
 export const getPublicOrder = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => idSchema.parse(data))
   .handler(async ({ data }) => {
