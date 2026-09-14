@@ -1,0 +1,228 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+
+import { SiteLayout } from "@/components/site-chrome";
+import { StoredImage } from "@/components/stored-image";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  fetchProductBySlug,
+  fetchSettings,
+  formatPrice,
+  whatsappLink,
+} from "@/lib/catalog";
+
+export const Route = createFileRoute("/produto/$slug")({
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.slug.replace(/-/g, " ")} — IZOTON` },
+      {
+        name: "description",
+        content: "Detalhes da peça IZOTON: fotos, tamanhos, cores e compra pelo WhatsApp.",
+      },
+      { property: "og:title", content: "Peça IZOTON" },
+      {
+        property: "og:description",
+        content: "Veja fotos, tamanhos e cores. Compre direto pelo WhatsApp.",
+      },
+    ],
+  }),
+  component: ProdutoPage,
+});
+
+const SIZE_TABLE = [
+  ["P", "94–98 cm", "76–80 cm"],
+  ["M", "99–104 cm", "81–86 cm"],
+  ["G", "105–110 cm", "87–92 cm"],
+  ["GG", "111–118 cm", "93–100 cm"],
+];
+
+function ProdutoPage() {
+  const { slug } = Route.useParams();
+  const { data: product, isLoading } = useQuery({
+    queryKey: ["product", slug],
+    queryFn: () => fetchProductBySlug(slug),
+  });
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: fetchSettings });
+
+  const [active, setActive] = useState(0);
+  const [size, setSize] = useState<string | null>(null);
+  const [color, setColor] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(false);
+
+  useEffect(() => {
+    if (!slug) return;
+    supabase.rpc("increment_product_views", { _slug: slug });
+  }, [slug]);
+
+  if (isLoading) {
+    return (
+      <SiteLayout>
+        <p className="mx-auto max-w-6xl px-5 py-24 text-muted-foreground">Carregando peça…</p>
+      </SiteLayout>
+    );
+  }
+
+  if (!product) {
+    return (
+      <SiteLayout>
+        <div className="mx-auto max-w-6xl px-5 py-24 text-center">
+          <h1 className="text-2xl">Peça não encontrada</h1>
+          <Link to="/catalogo" className="mt-6 inline-block text-sm underline underline-offset-4">
+            Voltar ao catálogo
+          </Link>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  const images = product.product_images.length
+    ? product.product_images
+    : [{ id: "fallback", url: "/images/hero.jpg", position: 0 }];
+  const available = product.product_variants.filter((v) => v.stock > 0);
+  const soldOut = product.status === "esgotado" || available.length === 0;
+
+  return (
+    <SiteLayout>
+      <div className="mx-auto grid max-w-6xl gap-12 px-5 py-12 lg:grid-cols-2">
+        <div>
+          <button
+            type="button"
+            onClick={() => setZoom((v) => !v)}
+            className="block w-full cursor-zoom-in overflow-hidden bg-muted"
+            aria-label="Ampliar foto"
+          >
+            <StoredImage
+              reference={images[active]?.url ?? "/images/hero.jpg"}
+              alt={product.name}
+              width={900}
+              height={1200}
+              className={
+                "aspect-[3/4] w-full object-cover transition-transform duration-500 " +
+                (zoom ? "scale-150" : "scale-100")
+              }
+            />
+          </button>
+          {images.length > 1 && (
+            <div className="mt-3 flex gap-3">
+              {images.map((img, i) => (
+                <button
+                  key={img.id}
+                  type="button"
+                  onClick={() => setActive(i)}
+                  className={
+                    "h-20 w-16 overflow-hidden border " +
+                    (i === active ? "border-primary" : "border-transparent")
+                  }
+                >
+                  <StoredImage
+                    reference={img.url}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          {product.categories?.name && <p className="eyebrow">{product.categories.name}</p>}
+          <h1 className="mt-2 text-3xl">{product.name}</h1>
+          <p className="mt-3 text-xl">{formatPrice(product.price)}</p>
+          {product.description && (
+            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+              {product.description}
+            </p>
+          )}
+
+          {product.colors.length > 0 && (
+            <div className="mt-8">
+              <p className="eyebrow mb-3">Cor</p>
+              <div className="flex flex-wrap gap-2">
+                {product.colors.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setColor(c === color ? null : c)}
+                    className={
+                      "border px-4 py-2 text-xs uppercase tracking-[0.15em] " +
+                      (color === c
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground")
+                    }
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {product.product_variants.length > 0 && (
+            <div className="mt-8">
+              <p className="eyebrow mb-3">Tamanho</p>
+              <div className="flex flex-wrap gap-2">
+                {product.product_variants.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    disabled={v.stock <= 0}
+                    onClick={() => setSize(v.size === size ? null : v.size)}
+                    className={
+                      "border px-4 py-2 text-xs uppercase tracking-[0.15em] disabled:cursor-not-allowed disabled:opacity-35 disabled:line-through " +
+                      (size === v.size
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground")
+                    }
+                  >
+                    {v.size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <a
+            href={whatsappLink(settings?.whatsapp ?? "", product, size, color)}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={soldOut}
+            className={
+              "mt-10 block w-full bg-whatsapp py-4 text-center text-xs uppercase tracking-[0.25em] text-whatsapp-foreground transition-opacity hover:opacity-90 " +
+              (soldOut ? "pointer-events-none opacity-40" : "")
+            }
+          >
+            {soldOut ? "Esgotado" : "Comprar via WhatsApp"}
+          </a>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Atendimento pessoal — você fala direto com a marca.
+          </p>
+
+          <div className="mt-12">
+            <p className="eyebrow mb-3">Tabela de tamanhos</p>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="py-2 font-normal">Tam.</th>
+                  <th className="py-2 font-normal">Peito</th>
+                  <th className="py-2 font-normal">Cintura</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SIZE_TABLE.map((row) => (
+                  <tr key={row[0]} className="border-b border-border/60">
+                    <td className="py-2">{row[0]}</td>
+                    <td className="py-2 text-muted-foreground">{row[1]}</td>
+                    <td className="py-2 text-muted-foreground">{row[2]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </SiteLayout>
+  );
+}
