@@ -44,6 +44,153 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          image_url: string
+          order_id: string
+          product_id: string | null
+          product_name: string
+          product_slug: string
+          quantity: number
+          size: string
+          unit_price: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          product_slug?: string
+          quantity?: number
+          size?: string
+          unit_price?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          product_slug?: string
+          quantity?: number
+          size?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          city: string
+          complement: string
+          created_at: string
+          customer_document: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          district: string
+          fulfillment_status: string
+          id: string
+          notes: string
+          number: string
+          order_number: number
+          payment_method: string
+          payment_reference: string
+          payment_status: string
+          shipping_carrier: string
+          shipping_days: number
+          shipping_price: number
+          shipping_service: string
+          state: string
+          street: string
+          subtotal: number
+          total: number
+          tracking_code: string
+          updated_at: string
+          zip: string
+        }
+        Insert: {
+          city: string
+          complement?: string
+          created_at?: string
+          customer_document?: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          district?: string
+          fulfillment_status?: string
+          id?: string
+          notes?: string
+          number: string
+          order_number?: number
+          payment_method?: string
+          payment_reference?: string
+          payment_status?: string
+          shipping_carrier?: string
+          shipping_days?: number
+          shipping_price?: number
+          shipping_service?: string
+          state: string
+          street: string
+          subtotal?: number
+          total?: number
+          tracking_code?: string
+          updated_at?: string
+          zip: string
+        }
+        Update: {
+          city?: string
+          complement?: string
+          created_at?: string
+          customer_document?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          district?: string
+          fulfillment_status?: string
+          id?: string
+          notes?: string
+          number?: string
+          order_number?: number
+          payment_method?: string
+          payment_reference?: string
+          payment_status?: string
+          shipping_carrier?: string
+          shipping_days?: number
+          shipping_price?: number
+          shipping_service?: string
+          state?: string
+          street?: string
+          subtotal?: number
+          total?: number
+          tracking_code?: string
+          updated_at?: string
+          zip?: string
+        }
+        Relationships: []
+      }
       product_images: {
         Row: {
           created_at: string
