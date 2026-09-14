@@ -23,13 +23,19 @@ export const getPublicOrder = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error("Não foi possível carregar o pedido.");
     if (!row) return null;
-    return {
-      ...row,
-      shipping_price: Number(row.shipping_price),
-      subtotal: Number(row.subtotal),
-      total: Number(row.total),
-      order_items: (row.order_items ?? []).map((i) => ({ ...i, unit_price: Number(i.unit_price) })),
+    const order = row as Record<string, unknown> & {
+      order_items?: Array<Record<string, unknown> & { unit_price: number | string }>;
     };
+    return {
+      ...order,
+      shipping_price: Number(order["shipping_price"] ?? 0),
+      subtotal: Number(order["subtotal"] ?? 0),
+      total: Number(order["total"] ?? 0),
+      order_items: (order.order_items ?? []).map((i) => ({
+        ...i,
+        unit_price: Number(i.unit_price),
+      })),
+    } as OrderView;
   });
 
 /** Confirmação de pagamento simulada — substituir pelo webhook do gateway. */
