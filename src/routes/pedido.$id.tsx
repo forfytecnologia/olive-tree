@@ -1,12 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site-chrome";
 import { formatPrice } from "@/lib/catalog";
-import { createPayment, PAYMENT_LABEL, type PaymentIntent, type PaymentMethod } from "@/lib/payments";
-import { fetchOrder, markOrderPaid } from "@/lib/orders";
+import {
+  createPayment,
+  PAYMENT_LABEL,
+  type PaymentIntent,
+  type PaymentMethod,
+} from "@/lib/payments";
+import { confirmMockPayment, getPublicOrder } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/pedido/$id")({
   head: () => ({
@@ -24,9 +30,12 @@ export const Route = createFileRoute("/pedido/$id")({
 function PedidoPage() {
   const { id } = Route.useParams();
   const queryClient = useQueryClient();
+  const loadOrder = useServerFn(getPublicOrder);
+  const confirmPayment = useServerFn(confirmMockPayment);
+
   const { data: order, isLoading } = useQuery({
-    queryKey: ["order", id],
-    queryFn: () => fetchOrder(id),
+    queryKey: ["public-order", id],
+    queryFn: () => loadOrder({ data: { id } }),
   });
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
 
@@ -52,10 +61,6 @@ function PedidoPage() {
       <SiteLayout>
         <div className="mx-auto max-w-3xl px-5 py-24 text-center">
           <h1 className="text-2xl">Pedido não encontrado</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Por segurança, os detalhes do pedido ficam disponíveis apenas para a loja. Guarde o
-            número recebido por e-mail.
-          </p>
           <Link to="/catalogo" className="mt-6 inline-block text-sm underline underline-offset-4">
             Voltar ao catálogo
           </Link>
@@ -64,14 +69,14 @@ function PedidoPage() {
     );
   }
 
-  async function confirmTestPayment() {
+  async function handleConfirm() {
     if (!order) return;
     try {
-      await markOrderPaid(order.id, intent?.reference ?? "SIM");
-      await queryClient.invalidateQueries({ queryKey: ["order", order.id] });
+      await confirmPayment({ data: { id: order.id, reference: intent?.reference ?? "SIM" } });
+      await queryClient.invalidateQueries({ queryKey: ["public-order", order.id] });
       toast.success("Pagamento simulado confirmado.");
     } catch {
-      toast.error("O pagamento só pode ser confirmado pela loja.");
+      toast.error("Não foi possível confirmar o pagamento.");
     }
   }
 
@@ -86,7 +91,9 @@ function PedidoPage() {
         </p>
 
         <section className="mt-10 bg-card p-6">
-          <p className="eyebrow">Pagamento — {PAYMENT_LABEL[order.payment_method as PaymentMethod]}</p>
+          <p className="eyebrow">
+            Pagamento — {PAYMENT_LABEL[order.payment_method as PaymentMethod]}
+          </p>
           <p className="mt-2 text-sm">
             Status: <strong>{order.payment_status}</strong>
           </p>
@@ -108,12 +115,29 @@ function PedidoPage() {
           {order.payment_status !== "pago" && (
             <button
               type="button"
-              onClick={confirmTestPayment}
+              onClick={handleConfirm}
               className="mt-5 border border-border px-6 py-3 text-xs uppercase tracking-[0.2em]"
             >
               Simular pagamento aprovado
             </button>
           )}
+        </section>
+
+        <section className="mt-6 bg-card p-6">
+          <p className="eyebrow">Itens</p>
+          <div className="mt-4 space-y-2 text-sm">
+            {order.order_items.map((i) => (
+              <div key={i.id} className="flex justify-between gap-4">
+                <span>
+                  {i.product_name}
+                  <span className="block text-xs text-muted-foreground">
+                    {[i.size, i.color].filter(Boolean).join(" · ")} · {i.quantity} un.
+                  </span>
+                </span>
+                <span>{formatPrice(i.unit_price * i.quantity)}</span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="mt-6 bg-card p-6">
