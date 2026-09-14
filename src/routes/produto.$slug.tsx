@@ -30,11 +30,11 @@ export const Route = createFileRoute("/produto/$slug")({
   component: ProdutoPage,
 });
 
-const SIZE_TABLE = [
-  ["P", "94–98 cm", "76–80 cm"],
-  ["M", "99–104 cm", "81–86 cm"],
-  ["G", "105–110 cm", "87–92 cm"],
-  ["GG", "111–118 cm", "93–100 cm"],
+const DETAILS = [
+  ["Proteção", "Lentes com proteção UV400 contra raios UVA e UVB."],
+  ["Acompanha", "Case, flanela de limpeza e certificado de garantia."],
+  ["Entrega", "Enviamos para todo o Brasil. Entrega em mãos na Grande Porto Alegre."],
+  ["Troca", "Até 7 dias após o recebimento, sem uso e na embalagem original."],
 ];
 
 function ProdutoPage() {
