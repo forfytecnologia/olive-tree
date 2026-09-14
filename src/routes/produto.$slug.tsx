@@ -44,6 +44,7 @@ function ProdutoPage() {
     queryFn: () => fetchProductBySlug(slug),
   });
   const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: fetchSettings });
+  const { add } = useCart();
 
   const [active, setActive] = useState(0);
   const [size, setSize] = useState<string | null>(null);
