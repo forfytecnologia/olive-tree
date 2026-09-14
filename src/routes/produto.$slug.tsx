@@ -184,20 +184,33 @@ function ProdutoPage() {
             </div>
           )}
 
-          <a
-            href={whatsappLink(settings?.whatsapp ?? "", product, size, color)}
-            target="_blank"
-            rel="noreferrer"
-            aria-disabled={soldOut}
-            className={
-              "mt-10 block w-full bg-whatsapp py-4 text-center text-xs uppercase tracking-[0.25em] text-whatsapp-foreground transition-opacity hover:opacity-90 " +
-              (soldOut ? "pointer-events-none opacity-40" : "")
-            }
+          <button
+            type="button"
+            disabled={soldOut}
+            onClick={handleAddToCart}
+            className="mt-10 block w-full bg-primary py-4 text-center text-xs uppercase tracking-[0.25em] text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {soldOut ? "Esgotado" : "Comprar via WhatsApp"}
-          </a>
+            {soldOut ? "Esgotado" : "Adicionar à sacola"}
+          </button>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Link
+              to="/provador"
+              className="border border-border py-3 text-center text-xs uppercase tracking-[0.2em]"
+            >
+              Provador virtual
+            </Link>
+            <a
+              href={whatsappLink(settings?.whatsapp ?? "", product, size, color)}
+              target="_blank"
+              rel="noreferrer"
+              className="border border-border py-3 text-center text-xs uppercase tracking-[0.2em]"
+            >
+              Tirar dúvidas
+            </a>
+          </div>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            Atendimento pessoal — você fala direto com a marca.
+            Entrega para todo o Brasil · frete grátis acima de R$ 350
           </p>
 
           <div className="mt-12">
