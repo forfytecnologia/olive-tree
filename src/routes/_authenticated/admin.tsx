@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import logo from "@/assets/logo-bird.png";
+import mark from "@/assets/mark-cream-t.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 const LINKS = [
   { to: "/admin", label: "Painel", exact: true },
+  { to: "/admin/pedidos", label: "Pedidos", exact: false },
   { to: "/admin/produtos", label: "Produtos", exact: false },
   { to: "/admin/categorias", label: "Categorias", exact: false },
   { to: "/admin/config", label: "Configurações", exact: false },
@@ -43,11 +44,11 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-secondary/40">
-      <header className="surface-olive">
+      <header className="surface-wine">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-3 px-5 py-4">
           <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="" width={28} height={28} className="h-7 w-7" />
-            <span className="wordmark text-sm">Izoton</span>
+            <img src={mark.url} alt="" width={28} height={28} className="h-7 w-7 object-contain" />
+            <span className="wordmark text-sm">Olive Tree</span>
           </Link>
           <nav className="flex flex-wrap gap-6 text-sm">
             {LINKS.map((l) => (
