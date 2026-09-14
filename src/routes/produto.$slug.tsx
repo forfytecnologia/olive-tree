@@ -83,6 +83,29 @@ function ProdutoPage() {
   const available = product.product_variants.filter((v) => v.stock > 0);
   const soldOut = product.status === "esgotado" || available.length === 0;
 
+  function handleAddToCart() {
+    if (!product) return;
+    if (product.product_variants.length > 0 && !size) {
+      toast.error("Escolha um tamanho.");
+      return;
+    }
+    if (product.colors.length > 0 && !color) {
+      toast.error("Escolha uma cor.");
+      return;
+    }
+    add({
+      product_id: product.id,
+      name: product.name,
+      slug: product.slug,
+      image: images[0]?.url ?? "",
+      size: size ?? "",
+      color: color ?? "",
+      price: product.price,
+    });
+    toast.success("Adicionado à sacola.");
+  }
+
+
   return (
     <SiteLayout>
       <div className="mx-auto grid max-w-6xl gap-12 px-5 py-12 lg:grid-cols-2">
