@@ -1,0 +1,120 @@
+/**
+ * Adaptador de frete.
+ *
+ * Hoje: simulação local (mock).
+ * Depois: trocar a implementação de `quoteShipping` por uma chamada ao
+ * Melhor Envio (server function), mantendo exatamente esta assinatura.
+ */
+
+export type ShippingItem = { quantity: number; price: number };
+
+export type ShippingOption = {
+  id: string;
+  carrier: string;
+  service: string;
+  price: number;
+  days: number;
+};
+
+export const FREE_SHIPPING_FROM = 350;
+
+export function onlyDigits(value: string) {
+  return (value || "").replace(/\D/g, "");
+}
+
+export function isValidCep(cep: string) {
+  return onlyDigits(cep).length === 8;
+}
+
+export type CepAddress = {
+  zip: string;
+  street: string;
+  district: string;
+  city: string;
+  state: string;
+};
+
+export async function lookupCep(cep: string): Promise<CepAddress | null> {
+  const digits = onlyDigits(cep);
+  if (digits.length !== 8) return null;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as Record<string, string> & { erro?: boolean };
+    if (data.erro) return null;
+    return {
+      zip: digits,
+      street: data["logradouro"] ?? "",
+      district: data["bairro"] ?? "",
+      city: data["localidade"] ?? "",
+      state: data["uf"] ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Distância simulada a partir da primeira faixa do CEP. */
+function regionFactor(cep: string) {
+  const prefix = Number(onlyDigits(cep).slice(0, 1) || "0");
+  // 0–1 Sudeste (origem) · 2–3 Sudeste/Sul · 4–5 Nordeste · 6–7 Norte/Centro · 8–9 Sul
+  if (prefix <= 1) return 1;
+  if (prefix <= 3) return 1.25;
+  if (prefix <= 5) return 1.75;
+  if (prefix <= 7) return 2;
+  return 1.5;
+}
+
+export async function quoteShipping(
+  cep: string,
+  items: ShippingItem[],
+): Promise<ShippingOption[]> {
+  if (!isValidCep(cep)) return [];
+  const units = items.reduce((s, i) => s + i.quantity, 0) || 1;
+  const merchandise = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const factor = regionFactor(cep);
+  const weight = 0.12 * units; // kg estimado por acessório
+
+  const round = (v: number) => Math.round(v * 100) / 100;
+
+  const base: ShippingOption[] = [
+    {
+      id: "mini",
+      carrier: "Correios",
+      service: "Mini Envios",
+      price: round((9.9 + weight * 6) * factor),
+      days: Math.round(6 * factor),
+    },
+    {
+      id: "pac",
+      carrier: "Correios",
+      service: "PAC",
+      price: round((17.5 + weight * 9) * factor),
+      days: Math.round(5 * factor),
+    },
+    {
+      id: "sedex",
+      carrier: "Correios",
+      service: "SEDEX",
+      price: round((28.9 + weight * 14) * factor),
+      days: Math.max(1, Math.round(2 * factor)),
+    },
+    {
+      id: "jadlog",
+      carrier: "Jadlog",
+      service: ".Package",
+      price: round((21.4 + weight * 11) * factor),
+      days: Math.round(4 * factor),
+    },
+  ];
+
+  if (merchandise >= FREE_SHIPPING_FROM) {
+    const cheapest = base.reduce((a, b) => (a.price <= b.price ? a : b));
+    cheapest.price = 0;
+    cheapest.service = `${cheapest.service} (frete grátis)`;
+  }
+
+  // simula latência de API
+  await new Promise((r) => setTimeout(r, 400));
+  return base.sort((a, b) => a.price - b.price);
+}
