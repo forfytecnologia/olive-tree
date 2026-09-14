@@ -1,30 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site-chrome";
 import { StoredImage } from "@/components/stored-image";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  fetchProductBySlug,
-  fetchSettings,
-  formatPrice,
-  whatsappLink,
-} from "@/lib/catalog";
+import { useCart } from "@/lib/cart";
+import { fetchProductBySlug, fetchSettings, formatPrice, whatsappLink } from "@/lib/catalog";
 
 export const Route = createFileRoute("/produto/$slug")({
   head: ({ params }) => ({
     meta: [
-      { title: `${params.slug.replace(/-/g, " ")} — IZOTON` },
+      { title: `${params.slug.replace(/-/g, " ")} — Olive Tree Acessórios` },
       {
         name: "description",
-        content: "Detalhes da peça IZOTON: fotos, tamanhos, cores e compra pelo WhatsApp.",
+        content:
+          "Detalhes da peça Olive Tree: fotos, tamanhos, cores, frete calculado e compra online.",
       },
-      { property: "og:title", content: "Peça IZOTON" },
+      { property: "og:title", content: "Peça Olive Tree" },
       {
         property: "og:description",
-        content: "Veja fotos, tamanhos e cores. Compre direto pelo WhatsApp.",
+        content: "Veja fotos, tamanhos e cores. Compre online com entrega para todo o Brasil.",
       },
+      { property: "og:type", content: "product" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ProdutoPage,
