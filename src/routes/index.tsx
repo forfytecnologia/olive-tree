@@ -75,17 +75,28 @@ function Index() {
       )}
 
       <section className="border-y border-border bg-secondary/60">
-        <div className="mx-auto max-w-3xl px-5 py-20 text-center">
-          <p className="eyebrow">A marca</p>
-          <p className="mt-4 text-xl leading-relaxed sm:text-2xl">
-            Mais do que acessórios, identidade. Óculos escolhidos a dedo para você.
-          </p>
-          <Link
-            to="/sobre"
-            className="mt-8 inline-block text-xs uppercase tracking-[0.25em] underline underline-offset-8"
-          >
-            Conheça a Olive Tree
-          </Link>
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-2">
+          <img
+            src={brandAsset.url}
+            alt="Óculos de sol Olive Tree sobre linho com ramo de oliveira"
+            width={1600}
+            height={912}
+            loading="lazy"
+            className="aspect-[16/10] w-full object-cover"
+          />
+          <div>
+            <p className="eyebrow">A marca</p>
+            <p className="mt-4 text-xl leading-relaxed sm:text-2xl">
+              Mais do que acessórios, identidade. Óculos escolhidos a dedo, com proteção UV400 e
+              entrega para todo o Brasil.
+            </p>
+            <Link
+              to="/sobre"
+              className="mt-8 inline-block text-xs uppercase tracking-[0.25em] underline underline-offset-8"
+            >
+              Conheça a Olive Tree
+            </Link>
+          </div>
         </div>
       </section>
 
