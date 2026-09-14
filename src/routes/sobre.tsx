@@ -8,17 +8,19 @@ import logo from "@/assets/logo-bird.png";
 export const Route = createFileRoute("/sobre")({
   head: () => ({
     meta: [
-      { title: "Sobre a IZOTON — Praia chique, urbano minimalista" },
+      { title: "Sobre a Olive Tree — Acessórios com leveza" },
       {
         name: "description",
         content:
-          "A identidade da IZOTON: leveza, natureza e atemporalidade em peças masculinas feitas para durar.",
+          "A identidade da Olive Tree: leveza, natureza e atemporalidade em acessórios feitos para durar.",
       },
-      { property: "og:title", content: "Sobre a IZOTON" },
+      { property: "og:title", content: "Sobre a Olive Tree" },
       {
         property: "og:description",
-        content: "Praia chique. Urbano minimalista. A leveza também é poder.",
+        content: "Leveza, natureza e atemporalidade em cada peça.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Sobre,

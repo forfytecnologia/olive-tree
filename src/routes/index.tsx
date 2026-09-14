@@ -8,17 +8,19 @@ import { fetchProducts, fetchSettings } from "@/lib/catalog";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "IZOTON — Moda masculina praia chique e minimalista" },
+      { title: "Olive Tree Acessórios — Loja online" },
       {
         name: "description",
         content:
-          "Catálogo digital IZOTON: camisas de linho, camisetas, bermudas e alfaiataria leve. Peça pelo WhatsApp.",
+          "Acessórios Olive Tree com compra online, provador virtual e entrega para todo o Brasil.",
       },
-      { property: "og:title", content: "IZOTON — Praia chique. Urbano minimalista." },
+      { property: "og:title", content: "Olive Tree Acessórios" },
       {
         property: "og:description",
-        content: "Peças atemporais em linho, viscose e algodão. Compre direto pelo WhatsApp.",
+        content: "Compre online, prove virtualmente e receba em casa.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,

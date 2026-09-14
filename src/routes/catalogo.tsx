@@ -10,17 +10,19 @@ import { fetchCategories, fetchProducts, formatPrice } from "@/lib/catalog";
 export const Route = createFileRoute("/catalogo")({
   head: () => ({
     meta: [
-      { title: "Catálogo IZOTON — Camisas, camisetas, bermudas e calças" },
+      { title: "Catálogo — Olive Tree Acessórios" },
       {
         name: "description",
         content:
-          "Navegue pelo catálogo IZOTON por categoria, tamanho, cor e faixa de preço. Compra direta pelo WhatsApp.",
+          "Navegue pelo catálogo Olive Tree por categoria, tamanho, cor e faixa de preço. Compra online com frete calculado.",
       },
-      { property: "og:title", content: "Catálogo IZOTON" },
+      { property: "og:title", content: "Catálogo Olive Tree" },
       {
         property: "og:description",
-        content: "Peças masculinas minimalistas. Filtre por categoria, tamanho, cor e preço.",
+        content: "Acessórios Olive Tree. Filtre por categoria, tamanho, cor e preço.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Catalogo,
