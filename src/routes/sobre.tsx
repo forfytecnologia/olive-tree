@@ -34,18 +34,18 @@ function Sobre() {
       <section className="mx-auto max-w-3xl px-5 py-20 text-center">
         <img src={logo.url} alt="" width={72} height={72} className="mx-auto h-18 w-18" />
         <h1 className="wordmark mt-8 text-2xl">Olive Tree</h1>
-        <p className="eyebrow mt-4">Praia chique · Urbano minimalista</p>
+        <p className="eyebrow mt-4">Óculos de sol · Mais do que acessórios, identidade</p>
         <p className="mt-10 whitespace-pre-line text-left text-lg leading-relaxed text-muted-foreground">
           {settings?.about_text}
         </p>
-        <p className="mt-12 text-xl">A leveza também é poder.</p>
+        <p className="mt-12 text-xl">Mais do que acessórios, identidade.</p>
       </section>
 
       <section className="mx-auto grid max-w-5xl gap-10 px-5 pb-10 sm:grid-cols-3">
         {[
-          ["Natural", "Linho, algodão e viscose com toque leve e caimento fluido."],
-          ["Atemporal", "Peças que atravessam estações — menos coleções, mais permanência."],
-          ["Minimalista", "Cortes limpos, paleta contida, nada supérfluo."],
+          ["Curadoria", "Cada modelo é escolhido a dedo, pensando na personalidade de quem usa."],
+          ["Proteção real", "Lentes com UV400: estilo com cuidado de verdade para os seus olhos."],
+          ["Perto de você", "Entrega em mãos na Grande Porto Alegre e envio para todo o Brasil."],
         ].map(([title, text]) => (
           <div key={title}>
             <h2 className="text-lg">{title}</h2>
