@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site-chrome";
 import { ProductCard } from "@/components/product-card";
 import { fetchProducts, fetchSettings } from "@/lib/catalog";
+import heroAsset from "@/assets/hero.jpg.asset.json";
+import brandAsset from "@/assets/brand.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
