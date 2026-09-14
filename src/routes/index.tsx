@@ -39,18 +39,18 @@ function Index() {
     <SiteLayout>
       <section className="relative">
         <img
-          src="/images/hero.jpg"
-          alt="Mulher usando óculos de sol Olive Tree"
+          src={heroAsset.url}
+          alt="Mulher usando óculos de sol Olive Tree sob luz natural"
           width={1920}
-          height={1210}
+          height={1088}
           fetchPriority="high"
-          className="aspect-[4/5] w-full object-cover object-top sm:aspect-[16/10] lg:aspect-[16/8]"
+          className="aspect-[4/5] w-full object-cover object-right sm:aspect-[16/10] lg:aspect-[16/7]"
         />
-        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/70 via-primary/10 to-transparent">
+        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/70 via-primary/10 to-transparent sm:bg-gradient-to-r sm:from-primary/60 sm:via-primary/10 sm:to-transparent">
           <div className="mx-auto w-full max-w-6xl px-5 pb-14">
             <p className="wordmark text-sm text-primary-foreground">Olive Tree</p>
             <h1 className="mt-4 max-w-xl text-3xl leading-tight text-primary-foreground sm:text-5xl">
-              {settings?.welcome_message ?? "A leveza também é poder."}
+              {settings?.welcome_message ?? "Mais do que acessórios, identidade."}
             </h1>
             <Link
               to="/catalogo"
