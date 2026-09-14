@@ -57,7 +57,7 @@ export const getPublicOrder = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error("Não foi possível carregar o pedido.");
     if (!row) return null;
-    const order = row as Record<string, unknown> & {
+    const order = row as unknown as Record<string, unknown> & {
       order_items?: Array<Record<string, unknown> & { unit_price: number | string }>;
     };
     return {
