@@ -8,10 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Acesso administrativo — IZOTON" },
-      { name: "description", content: "Área restrita de gestão do catálogo IZOTON." },
-      { property: "og:title", content: "Acesso administrativo — IZOTON" },
-      { property: "og:description", content: "Área restrita de gestão do catálogo IZOTON." },
+      { title: "Acesso administrativo — Olive Tree" },
+      { name: "description", content: "Área restrita de gestão do catálogo Olive Tree." },
+      { property: "og:title", content: "Acesso administrativo — Olive Tree" },
+      { property: "og:description", content: "Área restrita de gestão do catálogo Olive Tree." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -70,7 +70,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-secondary/50 px-5">
       <div className="w-full max-w-sm bg-card p-10 shadow-sm">
         <img src={logo} alt="" width={44} height={44} className="mx-auto h-11 w-11" />
-        <h1 className="wordmark mt-6 text-center text-base">Izoton</h1>
+        <h1 className="wordmark mt-6 text-center text-base">Olive Tree</h1>
         <p className="eyebrow mt-2 text-center">Painel administrativo</p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">

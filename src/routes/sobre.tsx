@@ -33,7 +33,7 @@ function Sobre() {
     <SiteLayout>
       <section className="mx-auto max-w-3xl px-5 py-20 text-center">
         <img src={logo} alt="" width={72} height={72} className="mx-auto h-18 w-18" />
-        <h1 className="wordmark mt-8 text-2xl">Izoton</h1>
+        <h1 className="wordmark mt-8 text-2xl">Olive Tree</h1>
         <p className="eyebrow mt-4">Praia chique · Urbano minimalista</p>
         <p className="mt-10 whitespace-pre-line text-left text-lg leading-relaxed text-muted-foreground">
           {settings?.about_text}

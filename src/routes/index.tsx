@@ -46,7 +46,7 @@ function Index() {
         />
         <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/70 via-primary/10 to-transparent">
           <div className="mx-auto w-full max-w-6xl px-5 pb-14">
-            <p className="wordmark text-sm text-primary-foreground">Izoton</p>
+            <p className="wordmark text-sm text-primary-foreground">Olive Tree</p>
             <h1 className="mt-4 max-w-xl text-3xl leading-tight text-primary-foreground sm:text-5xl">
               {settings?.welcome_message ?? "A leveza também é poder."}
             </h1>
@@ -82,7 +82,7 @@ function Index() {
             to="/sobre"
             className="mt-8 inline-block text-xs uppercase tracking-[0.25em] underline underline-offset-8"
           >
-            Conheça a IZOTON
+            Conheça a Olive Tree
           </Link>
         </div>
       </section>
