@@ -3,22 +3,24 @@ import { useQuery } from "@tanstack/react-query";
 
 import { SiteLayout } from "@/components/site-chrome";
 import { fetchSettings } from "@/lib/catalog";
-import logo from "@/assets/logo-bird.png";
+import logo from "@/assets/mark-wine-t.png.asset.json";
 
 export const Route = createFileRoute("/sobre")({
   head: () => ({
     meta: [
-      { title: "Sobre a IZOTON — Praia chique, urbano minimalista" },
+      { title: "Sobre a Olive Tree — Acessórios com leveza" },
       {
         name: "description",
         content:
-          "A identidade da IZOTON: leveza, natureza e atemporalidade em peças masculinas feitas para durar.",
+          "A identidade da Olive Tree: leveza, natureza e atemporalidade em acessórios feitos para durar.",
       },
-      { property: "og:title", content: "Sobre a IZOTON" },
+      { property: "og:title", content: "Sobre a Olive Tree" },
       {
         property: "og:description",
-        content: "Praia chique. Urbano minimalista. A leveza também é poder.",
+        content: "Leveza, natureza e atemporalidade em cada peça.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Sobre,
@@ -30,8 +32,8 @@ function Sobre() {
   return (
     <SiteLayout>
       <section className="mx-auto max-w-3xl px-5 py-20 text-center">
-        <img src={logo} alt="" width={72} height={72} className="mx-auto h-18 w-18" />
-        <h1 className="wordmark mt-8 text-2xl">Izoton</h1>
+        <img src={logo.url} alt="" width={72} height={72} className="mx-auto h-18 w-18" />
+        <h1 className="wordmark mt-8 text-2xl">Olive Tree</h1>
         <p className="eyebrow mt-4">Praia chique · Urbano minimalista</p>
         <p className="mt-10 whitespace-pre-line text-left text-lg leading-relaxed text-muted-foreground">
           {settings?.about_text}

@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * IZOTON design system — praia chique, urbano minimalista.
- * Verde-oliva profundo + creme dourado + muito branco.
+ * Olive Tree — acessórios. Paleta obrigatória:
+ * vinho #4f1a27 · sálvia #aeb7a6 · areia #eee9e0
  */
 
 @theme inline {
@@ -15,8 +15,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --font-display: "Jost", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -37,8 +37,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-sand: var(--sand);
-  --color-olive: var(--olive);
-  --color-gold: var(--gold);
+  --color-sage: var(--sage);
+  --color-wine: var(--wine);
   --color-whatsapp: var(--whatsapp);
   --color-whatsapp-foreground: var(--whatsapp-foreground);
   --color-sidebar: var(--sidebar);
@@ -53,58 +53,59 @@
 
 :root {
   --radius: 0.125rem;
-  --background: oklch(0.995 0.003 95);
-  --foreground: oklch(0.26 0.022 110);
+  --wine: oklch(0.305 0.08 8.1);
+  --sage: oklch(0.768 0.026 130);
+  --sand: oklch(0.935 0.013 82.4);
+
+  --background: oklch(0.968 0.007 80.7);
+  --foreground: oklch(0.246 0.067 10.4);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.26 0.022 110);
+  --card-foreground: oklch(0.246 0.067 10.4);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.26 0.022 110);
-  --primary: oklch(0.29 0.028 112);
-  --primary-foreground: oklch(0.9 0.05 95);
-  --secondary: oklch(0.95 0.018 95);
-  --secondary-foreground: oklch(0.29 0.028 112);
-  --muted: oklch(0.965 0.008 95);
-  --muted-foreground: oklch(0.52 0.018 108);
-  --accent: oklch(0.87 0.055 95);
-  --accent-foreground: oklch(0.26 0.022 110);
+  --popover-foreground: oklch(0.246 0.067 10.4);
+  --primary: oklch(0.305 0.08 8.1);
+  --primary-foreground: oklch(0.935 0.013 82.4);
+  --secondary: oklch(0.935 0.013 82.4);
+  --secondary-foreground: oklch(0.305 0.08 8.1);
+  --muted: oklch(0.945 0.009 82);
+  --muted-foreground: oklch(0.52 0.025 20);
+  --accent: oklch(0.768 0.026 130);
+  --accent-foreground: oklch(0.246 0.067 10.4);
   --destructive: oklch(0.52 0.16 27);
-  --destructive-foreground: oklch(0.98 0.005 95);
-  --border: oklch(0.9 0.01 95);
-  --input: oklch(0.9 0.01 95);
-  --ring: oklch(0.29 0.028 112);
-  --olive: oklch(0.29 0.028 112);
-  --gold: oklch(0.87 0.055 95);
-  --sand: oklch(0.94 0.02 90);
+  --destructive-foreground: oklch(0.98 0.005 85);
+  --border: oklch(0.885 0.012 85);
+  --input: oklch(0.885 0.012 85);
+  --ring: oklch(0.305 0.08 8.1);
   --whatsapp: oklch(0.62 0.15 150);
   --whatsapp-foreground: oklch(0.99 0.005 95);
-  --sidebar: oklch(0.29 0.028 112);
-  --sidebar-foreground: oklch(0.9 0.05 95);
-  --sidebar-primary: oklch(0.87 0.055 95);
-  --sidebar-primary-foreground: oklch(0.26 0.022 110);
-  --sidebar-accent: oklch(0.34 0.028 112);
-  --sidebar-accent-foreground: oklch(0.9 0.05 95);
-  --sidebar-border: oklch(0.38 0.025 112);
-  --sidebar-ring: oklch(0.87 0.055 95);
+  --sidebar: oklch(0.305 0.08 8.1);
+  --sidebar-foreground: oklch(0.935 0.013 82.4);
+  --sidebar-primary: oklch(0.768 0.026 130);
+  --sidebar-primary-foreground: oklch(0.246 0.067 10.4);
+  --sidebar-accent: oklch(0.372 0.102 9.8);
+  --sidebar-accent-foreground: oklch(0.935 0.013 82.4);
+  --sidebar-border: oklch(0.42 0.09 10);
+  --sidebar-ring: oklch(0.768 0.026 130);
 }
 
 .dark {
-  --background: oklch(0.22 0.02 112);
-  --foreground: oklch(0.93 0.03 95);
-  --card: oklch(0.26 0.022 112);
-  --card-foreground: oklch(0.93 0.03 95);
-  --popover: oklch(0.26 0.022 112);
-  --popover-foreground: oklch(0.93 0.03 95);
-  --primary: oklch(0.87 0.055 95);
-  --primary-foreground: oklch(0.26 0.022 110);
-  --secondary: oklch(0.32 0.025 112);
-  --secondary-foreground: oklch(0.93 0.03 95);
-  --muted: oklch(0.32 0.025 112);
-  --muted-foreground: oklch(0.75 0.02 95);
-  --accent: oklch(0.36 0.03 112);
-  --accent-foreground: oklch(0.93 0.03 95);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.87 0.055 95);
+  --background: oklch(0.2 0.045 10);
+  --foreground: oklch(0.935 0.013 82.4);
+  --card: oklch(0.246 0.067 10.4);
+  --card-foreground: oklch(0.935 0.013 82.4);
+  --popover: oklch(0.246 0.067 10.4);
+  --popover-foreground: oklch(0.935 0.013 82.4);
+  --primary: oklch(0.768 0.026 130);
+  --primary-foreground: oklch(0.246 0.067 10.4);
+  --secondary: oklch(0.3 0.06 10);
+  --secondary-foreground: oklch(0.935 0.013 82.4);
+  --muted: oklch(0.3 0.06 10);
+  --muted-foreground: oklch(0.78 0.02 85);
+  --accent: oklch(0.372 0.102 9.8);
+  --accent-foreground: oklch(0.935 0.013 82.4);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.768 0.026 130);
 }
 
 @layer base {
@@ -116,6 +117,7 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-weight: 300;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -125,25 +127,31 @@
   h4 {
     font-family: var(--font-display);
     font-weight: 300;
+    letter-spacing: 0.01em;
   }
 }
 
 @utility wordmark {
-  font-family: var(--font-display);
-  font-weight: 400;
+  font-family: var(--font-sans);
+  font-weight: 300;
   letter-spacing: 0.42em;
   text-transform: uppercase;
 }
 
 @utility eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: 0.7rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--color-muted-foreground);
 }
 
-@utility surface-olive {
-  background-color: var(--olive);
-  color: var(--primary-foreground);
+@utility surface-wine {
+  background-color: var(--wine);
+  color: var(--sand);
+}
+
+@utility surface-sage {
+  background-color: var(--sage);
+  color: var(--wine);
 }

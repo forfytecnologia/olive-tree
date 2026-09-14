@@ -1,30 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site-chrome";
 import { StoredImage } from "@/components/stored-image";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  fetchProductBySlug,
-  fetchSettings,
-  formatPrice,
-  whatsappLink,
-} from "@/lib/catalog";
+import { useCart } from "@/lib/cart";
+import { fetchProductBySlug, fetchSettings, formatPrice, whatsappLink } from "@/lib/catalog";
 
 export const Route = createFileRoute("/produto/$slug")({
   head: ({ params }) => ({
     meta: [
-      { title: `${params.slug.replace(/-/g, " ")} — IZOTON` },
+      { title: `${params.slug.replace(/-/g, " ")} — Olive Tree Acessórios` },
       {
         name: "description",
-        content: "Detalhes da peça IZOTON: fotos, tamanhos, cores e compra pelo WhatsApp.",
+        content:
+          "Detalhes da peça Olive Tree: fotos, tamanhos, cores, frete calculado e compra online.",
       },
-      { property: "og:title", content: "Peça IZOTON" },
+      { property: "og:title", content: "Peça Olive Tree" },
       {
         property: "og:description",
-        content: "Veja fotos, tamanhos e cores. Compre direto pelo WhatsApp.",
+        content: "Veja fotos, tamanhos e cores. Compre online com entrega para todo o Brasil.",
       },
+      { property: "og:type", content: "product" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ProdutoPage,
@@ -44,6 +44,7 @@ function ProdutoPage() {
     queryFn: () => fetchProductBySlug(slug),
   });
   const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: fetchSettings });
+  const { add } = useCart();
 
   const [active, setActive] = useState(0);
   const [size, setSize] = useState<string | null>(null);
@@ -81,6 +82,29 @@ function ProdutoPage() {
     : [{ id: "fallback", url: "/images/hero.jpg", position: 0 }];
   const available = product.product_variants.filter((v) => v.stock > 0);
   const soldOut = product.status === "esgotado" || available.length === 0;
+
+  function handleAddToCart() {
+    if (!product) return;
+    if (product.product_variants.length > 0 && !size) {
+      toast.error("Escolha um tamanho.");
+      return;
+    }
+    if (product.colors.length > 0 && !color) {
+      toast.error("Escolha uma cor.");
+      return;
+    }
+    add({
+      product_id: product.id,
+      name: product.name,
+      slug: product.slug,
+      image: images[0]?.url ?? "",
+      size: size ?? "",
+      color: color ?? "",
+      price: product.price,
+    });
+    toast.success("Adicionado à sacola.");
+  }
+
 
   return (
     <SiteLayout>
@@ -184,20 +208,33 @@ function ProdutoPage() {
             </div>
           )}
 
-          <a
-            href={whatsappLink(settings?.whatsapp ?? "", product, size, color)}
-            target="_blank"
-            rel="noreferrer"
-            aria-disabled={soldOut}
-            className={
-              "mt-10 block w-full bg-whatsapp py-4 text-center text-xs uppercase tracking-[0.25em] text-whatsapp-foreground transition-opacity hover:opacity-90 " +
-              (soldOut ? "pointer-events-none opacity-40" : "")
-            }
+          <button
+            type="button"
+            disabled={soldOut}
+            onClick={handleAddToCart}
+            className="mt-10 block w-full bg-primary py-4 text-center text-xs uppercase tracking-[0.25em] text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {soldOut ? "Esgotado" : "Comprar via WhatsApp"}
-          </a>
+            {soldOut ? "Esgotado" : "Adicionar à sacola"}
+          </button>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Link
+              to="/provador"
+              className="border border-border py-3 text-center text-xs uppercase tracking-[0.2em]"
+            >
+              Provador virtual
+            </Link>
+            <a
+              href={whatsappLink(settings?.whatsapp ?? "", product, size, color)}
+              target="_blank"
+              rel="noreferrer"
+              className="border border-border py-3 text-center text-xs uppercase tracking-[0.2em]"
+            >
+              Tirar dúvidas
+            </a>
+          </div>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            Atendimento pessoal — você fala direto com a marca.
+            Entrega para todo o Brasil · frete grátis acima de R$ 350
           </p>
 
           <div className="mt-12">

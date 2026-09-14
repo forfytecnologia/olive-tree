@@ -104,7 +104,7 @@ export async function fetchSettings(): Promise<StoreSettings> {
       whatsapp: "5527988291158",
       welcome_message: "A leveza também é poder.",
       about_text: "",
-      instagram_url: "https://instagram.com/izotonoficial",
+      instagram_url: "https://instagram.com/olivetreeacessorios",
     }
   );
 }
