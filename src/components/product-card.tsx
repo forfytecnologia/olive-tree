@@ -30,6 +30,9 @@ export function ProductCard({ product }: { product: Product }) {
         {product.categories?.name && <p className="eyebrow">{product.categories.name}</p>}
         <h3 className="mt-1 text-base font-normal">{product.name}</h3>
         <p className="mt-1 text-sm text-muted-foreground">{formatPrice(product.price)}</p>
+        <p className="text-xs text-muted-foreground">
+          {formatPrice(pixPrice(product.price))} no Pix · {MAX_INSTALLMENTS}x sem juros
+        </p>
       </div>
     </Link>
   );
