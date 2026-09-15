@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import { StoredImage } from "@/components/stored-image";
 import { coverImage, formatPrice, type Product } from "@/lib/catalog";
+import { MAX_INSTALLMENTS, pixPrice } from "@/lib/pricing";
 
 export function ProductCard({ product }: { product: Product }) {
   return (
