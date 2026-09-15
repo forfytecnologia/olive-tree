@@ -156,6 +156,10 @@ function ProdutoPage() {
           {product.categories?.name && <p className="eyebrow">{product.categories.name}</p>}
           <h1 className="mt-2 text-3xl">{product.name}</h1>
           <p className="mt-3 text-xl">{formatPrice(product.price)}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {formatPrice(pixPrice(product.price))} no Pix (5% de desconto) · ou{" "}
+            {MAX_INSTALLMENTS}x de {formatPrice(installmentValue(product.price))} sem juros
+          </p>
           {product.description && (
             <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
               {product.description}
