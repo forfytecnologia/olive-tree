@@ -157,6 +157,14 @@ function PedidoPage() {
             <span className="text-muted-foreground">Subtotal</span>
             <span>{formatPrice(order.subtotal)}</span>
           </div>
+          {order.subtotal + order.shipping_price - order.total > 0.001 && (
+            <div className="mt-2 flex justify-between">
+              <span className="text-muted-foreground">Desconto Pix (5%)</span>
+              <span>
+                - {formatPrice(order.subtotal + order.shipping_price - order.total)}
+              </span>
+            </div>
+          )}
           <div className="mt-2 flex justify-between">
             <span className="text-muted-foreground">Frete</span>
             <span>{order.shipping_price === 0 ? "Grátis" : formatPrice(order.shipping_price)}</span>

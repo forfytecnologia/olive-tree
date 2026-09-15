@@ -6,6 +6,7 @@ import { SiteLayout } from "@/components/site-chrome";
 import { StoredImage } from "@/components/stored-image";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/catalog";
+import { MAX_INSTALLMENTS, installmentValue, pixDiscount } from "@/lib/pricing";
 import { createOrder } from "@/lib/orders";
 import { createPayment, PAYMENT_LABEL, type PaymentMethod } from "@/lib/payments";
 import {
@@ -74,7 +75,8 @@ function CheckoutPage() {
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [submitting, setSubmitting] = useState(false);
 
-  const total = subtotal + (shipping?.price ?? 0);
+  const discount = method === "pix" ? pixDiscount(subtotal) : 0;
+  const total = subtotal - discount + (shipping?.price ?? 0);
 
   if (items.length === 0) {
     return (
@@ -343,7 +345,14 @@ function CheckoutPage() {
                       {PAYMENT_LABEL[m]}
                       {m === "pix" && (
                         <span className="block text-xs text-muted-foreground">
-                          Aprovação imediata
+                          Aprovação imediata · 5% de desconto
+                        </span>
+                      )}
+                      {m === "cartao" && (
+                        <span className="block text-xs text-muted-foreground">
+                          Em até {MAX_INSTALLMENTS}x de{" "}
+                          {formatPrice(installmentValue(subtotal + (shipping?.price ?? 0)))} sem
+                          juros
                         </span>
                       )}
                     </button>
@@ -399,6 +408,12 @@ function CheckoutPage() {
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Desconto Pix (5%)</span>
+                  <span>- {formatPrice(discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Frete</span>
                 <span>
@@ -413,6 +428,10 @@ function CheckoutPage() {
                 <span>Total</span>
                 <span>{formatPrice(total)}</span>
               </div>
+              <p className="pt-1 text-xs text-muted-foreground">
+                No Pix são 5% de desconto. No cartão, até {MAX_INSTALLMENTS}x de{" "}
+                {formatPrice(installmentValue(subtotal + (shipping?.price ?? 0)))} sem juros.
+              </p>
             </div>
           </aside>
         </div>
