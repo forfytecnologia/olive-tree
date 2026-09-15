@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/admin/produtos/$id")({
   component: ProdutoForm,
 });
 
-const DEFAULT_SIZES = ["P", "M", "G", "GG"];
+const DEFAULT_SIZES = ["Único"];
 
 type SizeRow = { size: string; stock: number };
 
@@ -253,7 +253,7 @@ function ProdutoForm() {
       </div>
 
       <div className="bg-card p-6">
-        <p className="eyebrow">Tamanhos e estoque</p>
+        <p className="eyebrow">Variações e estoque</p>
         <div className="mt-4 space-y-3">
           {sizes.map((row, i) => (
             <div key={i} className="flex items-center gap-3">
@@ -266,7 +266,7 @@ function ProdutoForm() {
                   )
                 }
                 className={inputClass + " max-w-28"}
-                aria-label="Tamanho"
+                aria-label="Variação"
               />
               <input
                 type="number"
@@ -297,7 +297,7 @@ function ProdutoForm() {
           onClick={() => setSizes((prev) => [...prev, { size: "", stock: 0 }])}
           className="mt-4 text-xs uppercase tracking-[0.2em] underline underline-offset-4"
         >
-          Adicionar tamanho
+          Adicionar variação
         </button>
       </div>
 
