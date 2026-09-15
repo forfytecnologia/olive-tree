@@ -408,6 +408,12 @@ function CheckoutPage() {
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Desconto Pix (5%)</span>
+                  <span>- {formatPrice(discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Frete</span>
                 <span>
