@@ -345,7 +345,14 @@ function CheckoutPage() {
                       {PAYMENT_LABEL[m]}
                       {m === "pix" && (
                         <span className="block text-xs text-muted-foreground">
-                          Aprovação imediata
+                          Aprovação imediata · 5% de desconto
+                        </span>
+                      )}
+                      {m === "cartao" && (
+                        <span className="block text-xs text-muted-foreground">
+                          Em até {MAX_INSTALLMENTS}x de{" "}
+                          {formatPrice(installmentValue(subtotal + (shipping?.price ?? 0)))} sem
+                          juros
                         </span>
                       )}
                     </button>
