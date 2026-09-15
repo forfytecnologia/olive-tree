@@ -38,7 +38,33 @@ function Sobre() {
         <p className="mt-10 whitespace-pre-line text-left text-lg leading-relaxed text-muted-foreground">
           {settings?.about_text}
         </p>
-        <p className="mt-12 text-xl">Mais do que acessórios, identidade.</p>
+      </section>
+
+      <section className="border-y border-border bg-secondary/50">
+        <div className="mx-auto max-w-3xl px-5 py-20">
+          <p className="eyebrow">A origem</p>
+          <h2 className="mt-2 text-2xl sm:text-3xl">Por que Olive Tree?</h2>
+          <div className="mt-8 space-y-5 text-lg leading-relaxed text-muted-foreground">
+            <p>
+              Porque acreditamos que uma marca deve representar muito mais do que aquilo que vende.
+            </p>
+            <p>
+              Olive Tree significa oliveira — uma árvore conhecida por sua força, longevidade e pela
+              capacidade de permanecer firme ao longo do tempo. Esses valores inspiram tudo o que
+              queremos construir.
+            </p>
+            <p>
+              Cada acessório que chega até você é escolhido com o mesmo propósito: unir elegância,
+              qualidade e autenticidade, valorizando quem você é em cada detalhe.
+            </p>
+            <p>Mais do que acompanhar tendências, queremos fazer parte da sua história.</p>
+          </div>
+          <p className="mt-10 text-xl text-foreground">Seja bem-vinda à Olive Tree.</p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-5 pt-20 text-center">
+        <p className="text-xl">Mais do que acessórios, identidade.</p>
       </section>
 
       <section className="mx-auto grid max-w-5xl gap-10 px-5 pb-10 sm:grid-cols-3">
