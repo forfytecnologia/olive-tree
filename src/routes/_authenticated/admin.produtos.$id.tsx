@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/admin/produtos/$id")({
   component: ProdutoForm,
 });
 
-const DEFAULT_SIZES = ["P", "M", "G", "GG"];
+const DEFAULT_SIZES = ["Único"];
 
 type SizeRow = { size: string; stock: number };
 
