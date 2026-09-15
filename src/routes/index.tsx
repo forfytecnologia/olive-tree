@@ -101,6 +101,8 @@ function Index() {
         </div>
       </section>
 
+      <Testimonials />
+
       <section className="mx-auto max-w-6xl px-5 py-20">
         <p className="eyebrow">Novidades</p>
         <h2 className="mt-2 text-2xl sm:text-3xl">Últimas peças</h2>
