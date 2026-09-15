@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CartItem } from "@/lib/cart";
 import type { ShippingOption } from "@/lib/shipping";
 import type { PaymentMethod } from "@/lib/payments";
+import { pixDiscount } from "@/lib/pricing";
 
 export type OrderItem = {
   id: string;
