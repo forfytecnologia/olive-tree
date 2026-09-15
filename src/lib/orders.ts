@@ -74,7 +74,8 @@ function numeric(row: Record<string, unknown>) {
 
 export async function createOrder(input: CheckoutInput): Promise<Order> {
   const subtotal = input.items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const total = subtotal + input.shipping.price;
+  const discount = input.payment_method === "pix" ? pixDiscount(subtotal) : 0;
+  const total = subtotal - discount + input.shipping.price;
 
   const { data, error } = await supabase
     .from("orders")
