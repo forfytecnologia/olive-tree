@@ -9,6 +9,7 @@ import { StoredImage } from "@/components/stored-image";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/lib/cart";
 import { fetchProductBySlug, fetchSettings, formatPrice, whatsappLink } from "@/lib/catalog";
+import { MAX_INSTALLMENTS, installmentValue, pixPrice } from "@/lib/pricing";
 
 export const Route = createFileRoute("/produto/$slug")({
   head: ({ params }) => ({
