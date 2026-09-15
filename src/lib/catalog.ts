@@ -1,3 +1,4 @@
+import fallbackAsset from "@/assets/brand.jpg.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 
 export type ProductStatus = "ativo" | "esgotado" | "rascunho";
@@ -128,7 +129,7 @@ export function stockTotal(product: Product) {
 }
 
 export function coverImage(product: Product) {
-  return product.product_images[0]?.url ?? "/images/hero.jpg";
+  return product.product_images[0]?.url ?? fallbackAsset.url;
 }
 
 export function whatsappLink(

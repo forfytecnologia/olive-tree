@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site-chrome";
 import { ProductCard } from "@/components/product-card";
 import { fetchProducts, fetchSettings } from "@/lib/catalog";
+import heroAsset from "@/assets/hero.jpg.asset.json";
+import brandAsset from "@/assets/brand.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,18 +39,18 @@ function Index() {
     <SiteLayout>
       <section className="relative">
         <img
-          src="/images/hero.jpg"
-          alt="Mulher usando óculos de sol Olive Tree"
+          src={heroAsset.url}
+          alt="Mulher usando óculos de sol Olive Tree sob luz natural"
           width={1920}
-          height={1210}
+          height={1088}
           fetchPriority="high"
-          className="aspect-[4/5] w-full object-cover object-top sm:aspect-[16/10] lg:aspect-[16/8]"
+          className="aspect-[4/5] w-full object-cover object-right sm:aspect-[16/10] lg:aspect-[16/7]"
         />
-        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/70 via-primary/10 to-transparent">
+        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/70 via-primary/10 to-transparent sm:bg-gradient-to-r sm:from-primary/60 sm:via-primary/10 sm:to-transparent">
           <div className="mx-auto w-full max-w-6xl px-5 pb-14">
             <p className="wordmark text-sm text-primary-foreground">Olive Tree</p>
             <h1 className="mt-4 max-w-xl text-3xl leading-tight text-primary-foreground sm:text-5xl">
-              {settings?.welcome_message ?? "A leveza também é poder."}
+              {settings?.welcome_message ?? "Mais do que acessórios, identidade."}
             </h1>
             <Link
               to="/catalogo"
@@ -73,17 +75,28 @@ function Index() {
       )}
 
       <section className="border-y border-border bg-secondary/60">
-        <div className="mx-auto max-w-3xl px-5 py-20 text-center">
-          <p className="eyebrow">A marca</p>
-          <p className="mt-4 text-xl leading-relaxed sm:text-2xl">
-            Mais do que acessórios, identidade. Óculos escolhidos a dedo para você.
-          </p>
-          <Link
-            to="/sobre"
-            className="mt-8 inline-block text-xs uppercase tracking-[0.25em] underline underline-offset-8"
-          >
-            Conheça a Olive Tree
-          </Link>
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-2">
+          <img
+            src={brandAsset.url}
+            alt="Óculos de sol Olive Tree sobre linho com ramo de oliveira"
+            width={1600}
+            height={912}
+            loading="lazy"
+            className="aspect-[16/10] w-full object-cover"
+          />
+          <div>
+            <p className="eyebrow">A marca</p>
+            <p className="mt-4 text-xl leading-relaxed sm:text-2xl">
+              Mais do que acessórios, identidade. Óculos escolhidos a dedo, com proteção UV400 e
+              entrega para todo o Brasil.
+            </p>
+            <Link
+              to="/sobre"
+              className="mt-8 inline-block text-xs uppercase tracking-[0.25em] underline underline-offset-8"
+            >
+              Conheça a Olive Tree
+            </Link>
+          </div>
         </div>
       </section>
 

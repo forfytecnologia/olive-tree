@@ -1,3 +1,4 @@
+import fallbackAsset from "@/assets/brand.jpg.asset.json";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -79,7 +80,7 @@ function ProdutoPage() {
 
   const images = product.product_images.length
     ? product.product_images
-    : [{ id: "fallback", url: "/images/hero.jpg", position: 0 }];
+    : [{ id: "fallback", url: fallbackAsset.url, position: 0 }];
   const available = product.product_variants.filter((v) => v.stock > 0);
   const soldOut = product.status === "esgotado" || available.length === 0;
 
@@ -117,7 +118,7 @@ function ProdutoPage() {
             aria-label="Ampliar foto"
           >
             <StoredImage
-              reference={images[active]?.url ?? "/images/hero.jpg"}
+              reference={images[active]?.url ?? fallbackAsset.url}
               alt={product.name}
               width={900}
               height={1200}
