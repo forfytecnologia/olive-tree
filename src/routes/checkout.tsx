@@ -74,7 +74,8 @@ function CheckoutPage() {
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [submitting, setSubmitting] = useState(false);
 
-  const total = subtotal + (shipping?.price ?? 0);
+  const discount = method === "pix" ? pixDiscount(subtotal) : 0;
+  const total = subtotal - discount + (shipping?.price ?? 0);
 
   if (items.length === 0) {
     return (
