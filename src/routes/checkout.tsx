@@ -6,6 +6,7 @@ import { SiteLayout } from "@/components/site-chrome";
 import { StoredImage } from "@/components/stored-image";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/catalog";
+import { MAX_INSTALLMENTS, installmentValue, pixDiscount } from "@/lib/pricing";
 import { createOrder } from "@/lib/orders";
 import { createPayment, PAYMENT_LABEL, type PaymentMethod } from "@/lib/payments";
 import {
