@@ -23,20 +23,20 @@ export function SiteHeader() {
   return (
     <header className="surface-wine sticky top-0 z-40">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-5">
-        <Link to="/" className="flex items-center gap-3" aria-label="Olive Tree — página inicial">
+        <Link to="/" className="flex items-center gap-2" aria-label="Olive Tree — página inicial">
+          <img
+            src={wordmarkCream.url}
+            alt="Olive Tree Acessórios"
+            width={280}
+            height={87}
+            className="h-11 w-auto object-contain sm:h-14"
+          />
           <img
             src={markCream.url}
             alt=""
             width={40}
             height={40}
-            className="h-9 w-9 object-contain"
-          />
-          <img
-            src={wordmarkCream.url}
-            alt="Olive Tree Acessórios"
-            width={200}
-            height={62}
-            className="h-8 w-auto object-contain"
+            className="h-8 w-8 object-contain sm:h-9 sm:w-9"
           />
         </Link>
 
