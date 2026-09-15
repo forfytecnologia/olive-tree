@@ -428,6 +428,10 @@ function CheckoutPage() {
                 <span>Total</span>
                 <span>{formatPrice(total)}</span>
               </div>
+              <p className="pt-1 text-xs text-muted-foreground">
+                No Pix são 5% de desconto. No cartão, até {MAX_INSTALLMENTS}x de{" "}
+                {formatPrice(installmentValue(subtotal + (shipping?.price ?? 0)))} sem juros.
+              </p>
             </div>
           </aside>
         </div>
