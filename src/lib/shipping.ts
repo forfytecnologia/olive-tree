@@ -65,6 +65,15 @@ function regionFactor(cep: string) {
   return 1.5;
 }
 
+function applyFreeShipping(options: ShippingOption[], merchandise: number) {
+  if (merchandise >= FREE_SHIPPING_FROM && options.length) {
+    const cheapest = options.reduce((a, b) => (a.price <= b.price ? a : b));
+    cheapest.price = 0;
+    cheapest.service = `${cheapest.service} (frete grátis)`;
+  }
+  return options.sort((a, b) => a.price - b.price);
+}
+
 export async function quoteShipping(
   cep: string,
   items: ShippingItem[],
@@ -72,6 +81,24 @@ export async function quoteShipping(
   if (!isValidCep(cep)) return [];
   const units = items.reduce((s, i) => s + i.quantity, 0) || 1;
   const merchandise = items.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  // 1) Melhor Envio (quando a loja tiver token configurado no painel)
+  try {
+    const { quoteShippingLive } = await import("./shipping.functions");
+    const live = await quoteShippingLive({
+      data: { zip: onlyDigits(cep), units, merchandise: Math.round(merchandise * 100) / 100 },
+    });
+    if (live.options.length) {
+      return applyFreeShipping(
+        live.options.map((o) => ({ ...o })),
+        merchandise,
+      );
+    }
+  } catch {
+    // segue para a estimativa local
+  }
+
+  // 2) Estimativa local (usada enquanto a integração estiver desligada)
   const factor = regionFactor(cep);
   const weight = 0.12 * units; // kg estimado por acessório
 
@@ -108,13 +135,5 @@ export async function quoteShipping(
     },
   ];
 
-  if (merchandise >= FREE_SHIPPING_FROM) {
-    const cheapest = base.reduce((a, b) => (a.price <= b.price ? a : b));
-    cheapest.price = 0;
-    cheapest.service = `${cheapest.service} (frete grátis)`;
-  }
-
-  // simula latência de API
-  await new Promise((r) => setTimeout(r, 400));
-  return base.sort((a, b) => a.price - b.price);
+  return applyFreeShipping(base, merchandise);
 }

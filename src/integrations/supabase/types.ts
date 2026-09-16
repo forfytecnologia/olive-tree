@@ -323,6 +323,48 @@ export type Database = {
         }
         Relationships: []
       }
+      shipping_settings: {
+        Row: {
+          box_height: number
+          box_length: number
+          box_weight: number
+          box_width: number
+          enabled: boolean
+          id: boolean
+          insurance_enabled: boolean
+          melhor_envio_token: string
+          origin_zip: string
+          sandbox: boolean
+          updated_at: string
+        }
+        Insert: {
+          box_height?: number
+          box_length?: number
+          box_weight?: number
+          box_width?: number
+          enabled?: boolean
+          id?: boolean
+          insurance_enabled?: boolean
+          melhor_envio_token?: string
+          origin_zip?: string
+          sandbox?: boolean
+          updated_at?: string
+        }
+        Update: {
+          box_height?: number
+          box_length?: number
+          box_weight?: number
+          box_width?: number
+          enabled?: boolean
+          id?: boolean
+          insurance_enabled?: boolean
+          melhor_envio_token?: string
+          origin_zip?: string
+          sandbox?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       store_settings: {
         Row: {
           about_text: string
