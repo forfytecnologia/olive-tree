@@ -130,7 +130,17 @@ function PedidoPage() {
             Status: <strong>{order.payment_status}</strong>
           </p>
 
-          {order.payment_status !== "pago" && intent?.pix_code && (
+          {status && order.payment_status !== "pago" && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {status === "sucesso"
+                ? "Recebemos o retorno do pagamento. Estamos confirmando com o banco — esta página atualiza sozinha."
+                : status === "pendente"
+                  ? "O pagamento ficou pendente de confirmação. Assim que for aprovado, atualizamos aqui."
+                  : "O pagamento não foi concluído. Você pode tentar novamente abaixo."}
+            </p>
+          )}
+
+          {order.payment_status !== "pago" && !hasLivePayment && intent?.pix_code && (
             <div className="mt-4">
               <p className="text-sm">Chave Pix: {intent.pix_key}</p>
               <p className="mt-2 break-all border border-dashed border-border p-3 text-xs text-muted-foreground">
@@ -138,13 +148,24 @@ function PedidoPage() {
               </p>
             </div>
           )}
-          {order.payment_status !== "pago" && intent?.boleto_line && (
+          {order.payment_status !== "pago" && !hasLivePayment && intent?.boleto_line && (
             <p className="mt-4 border border-dashed border-border p-3 text-xs text-muted-foreground">
               {intent.boleto_line}
             </p>
           )}
 
-          {order.payment_status !== "pago" && (
+          {order.payment_status !== "pago" && hasLivePayment && (
+            <button
+              type="button"
+              onClick={payNow}
+              disabled={redirecting}
+              className="mt-5 bg-primary px-8 py-3 text-xs uppercase tracking-[0.25em] text-primary-foreground disabled:opacity-60"
+            >
+              {redirecting ? "Abrindo pagamento…" : "Pagar agora"}
+            </button>
+          )}
+
+          {order.payment_status !== "pago" && !hasLivePayment && (
             <button
               type="button"
               onClick={handleConfirm}
