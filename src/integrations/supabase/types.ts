@@ -116,7 +116,9 @@ export type Database = {
           notes: string
           number: string
           order_number: number
+          payment_link: string
           payment_method: string
+          payment_provider: string
           payment_reference: string
           payment_status: string
           shipping_carrier: string
@@ -145,7 +147,9 @@ export type Database = {
           notes?: string
           number: string
           order_number?: number
+          payment_link?: string
           payment_method?: string
+          payment_provider?: string
           payment_reference?: string
           payment_status?: string
           shipping_carrier?: string
@@ -174,7 +178,9 @@ export type Database = {
           notes?: string
           number?: string
           order_number?: number
+          payment_link?: string
           payment_method?: string
+          payment_provider?: string
           payment_reference?: string
           payment_status?: string
           shipping_carrier?: string
@@ -188,6 +194,36 @@ export type Database = {
           tracking_code?: string
           updated_at?: string
           zip?: string
+        }
+        Relationships: []
+      }
+      payment_settings: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          mp_access_token: string
+          mp_public_key: string
+          mp_webhook_secret: string
+          sandbox: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          mp_access_token?: string
+          mp_public_key?: string
+          mp_webhook_secret?: string
+          sandbox?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          mp_access_token?: string
+          mp_public_key?: string
+          mp_webhook_secret?: string
+          sandbox?: boolean
+          updated_at?: string
         }
         Relationships: []
       }

@@ -13,8 +13,11 @@ import {
   type PaymentMethod,
 } from "@/lib/payments";
 import { confirmMockPayment, getPublicOrder } from "@/lib/orders.functions";
+import { createMercadoPagoCheckout } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/pedido/$id")({
+  validateSearch: (search: Record<string, unknown>): { status?: string } =>
+    typeof search["status"] === "string" ? { status: search["status"] as string } : {},
   head: () => ({
     meta: [
       { title: "Pedido confirmado — Olive Tree Acessórios" },
@@ -29,24 +32,52 @@ export const Route = createFileRoute("/pedido/$id")({
 
 function PedidoPage() {
   const { id } = Route.useParams();
+  const { status } = Route.useSearch();
   const queryClient = useQueryClient();
   const loadOrder = useServerFn(getPublicOrder);
   const confirmPayment = useServerFn(confirmMockPayment);
+  const startCheckout = useServerFn(createMercadoPagoCheckout);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["public-order", id],
     queryFn: () => loadOrder({ data: { id } }),
+    // Voltando do Mercado Pago, o aviso de pagamento pode levar alguns segundos.
+    refetchInterval: (query) => {
+      const current = query.state.data;
+      if (!current || current.payment_status === "pago") return false;
+      return status ? 4000 : false;
+    },
   });
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+
+  const hasLivePayment = Boolean(order?.payment_link);
 
   useEffect(() => {
-    if (!order || order.payment_status === "pago") return;
+    if (!order || order.payment_status === "pago" || order.payment_link) return;
     createPayment({
       method: order.payment_method as PaymentMethod,
       total: order.total,
       orderId: order.id,
     }).then(setIntent);
   }, [order]);
+
+  async function payNow() {
+    if (!order) return;
+    setRedirecting(true);
+    try {
+      const res = await startCheckout({ data: { orderId: order.id } });
+      if (res.url) {
+        window.location.href = res.url;
+        return;
+      }
+      toast.error(res.error ?? "Pagamento online indisponível no momento.");
+    } catch {
+      toast.error("Não foi possível abrir o pagamento.");
+    } finally {
+      setRedirecting(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -98,7 +129,17 @@ function PedidoPage() {
             Status: <strong>{order.payment_status}</strong>
           </p>
 
-          {order.payment_status !== "pago" && intent?.pix_code && (
+          {status && order.payment_status !== "pago" && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {status === "sucesso"
+                ? "Recebemos o retorno do pagamento. Estamos confirmando com o banco — esta página atualiza sozinha."
+                : status === "pendente"
+                  ? "O pagamento ficou pendente de confirmação. Assim que for aprovado, atualizamos aqui."
+                  : "O pagamento não foi concluído. Você pode tentar novamente abaixo."}
+            </p>
+          )}
+
+          {order.payment_status !== "pago" && !hasLivePayment && intent?.pix_code && (
             <div className="mt-4">
               <p className="text-sm">Chave Pix: {intent.pix_key}</p>
               <p className="mt-2 break-all border border-dashed border-border p-3 text-xs text-muted-foreground">
@@ -106,13 +147,24 @@ function PedidoPage() {
               </p>
             </div>
           )}
-          {order.payment_status !== "pago" && intent?.boleto_line && (
+          {order.payment_status !== "pago" && !hasLivePayment && intent?.boleto_line && (
             <p className="mt-4 border border-dashed border-border p-3 text-xs text-muted-foreground">
               {intent.boleto_line}
             </p>
           )}
 
-          {order.payment_status !== "pago" && (
+          {order.payment_status !== "pago" && hasLivePayment && (
+            <button
+              type="button"
+              onClick={payNow}
+              disabled={redirecting}
+              className="mt-5 bg-primary px-8 py-3 text-xs uppercase tracking-[0.25em] text-primary-foreground disabled:opacity-60"
+            >
+              {redirecting ? "Abrindo pagamento…" : "Pagar agora"}
+            </button>
+          )}
+
+          {order.payment_status !== "pago" && !hasLivePayment && (
             <button
               type="button"
               onClick={handleConfirm}

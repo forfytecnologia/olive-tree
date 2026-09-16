@@ -1,0 +1,1 @@
+delete from public.orders where order_number in (999901, 999902);
