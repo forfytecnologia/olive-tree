@@ -40,14 +40,25 @@ async function loadPaymentSettings(): Promise<PaymentSettings | null> {
   return (data as PaymentSettings | null) ?? null;
 }
 
+/** Domínio oficial da loja — usado no aviso automático e no retorno do pagamento. */
+const OFFICIAL_SITE_URL = "https://www.useolivetree.com.br";
+
 function siteOrigin(): string {
+  const configured = process.env["PUBLIC_SITE_URL"];
+  if (configured) return configured.replace(/\/+$/, "");
   try {
     const url = getRequestUrl({ xForwardedHost: true, xForwardedProto: true });
-    return `${url.protocol}//${url.host}`;
+    const host = url.host;
+    // Endereços de prévia da Lovable não servem para o Mercado Pago.
+    if (/lovableproject\.com$|lovable\.app$|^localhost(:\d+)?$/.test(host)) {
+      return OFFICIAL_SITE_URL;
+    }
+    return `${url.protocol}//${host}`;
   } catch {
-    return "";
+    return OFFICIAL_SITE_URL;
   }
 }
+
 
 async function assertAdmin(context: { supabase: unknown; userId: string }) {
   const supabase = context.supabase as {
