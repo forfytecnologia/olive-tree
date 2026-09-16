@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CartItem } from "@/lib/cart";
 import type { ShippingOption } from "@/lib/shipping";
 import type { PaymentMethod } from "@/lib/payments";
-import { pixDiscount } from "@/lib/pricing";
+import { createOrderOnServer } from "@/lib/orders.create.functions";
 
 export type OrderItem = {
   id: string;
@@ -74,54 +74,43 @@ function numeric(row: Record<string, unknown>) {
 }
 
 export async function createOrder(input: CheckoutInput): Promise<Order> {
-  const subtotal = input.items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const discount = input.payment_method === "pix" ? pixDiscount(subtotal) : 0;
-  const total = subtotal - discount + input.shipping.price;
-
-  const { data, error } = await supabase
-    .from("orders")
-    .insert({
-      customer_name: input.customer.name,
-      customer_email: input.customer.email,
-      customer_phone: input.customer.phone,
-      customer_document: input.customer.document,
-      zip: input.address.zip,
-      street: input.address.street,
-      number: input.address.number,
-      complement: input.address.complement,
-      district: input.address.district,
-      city: input.address.city,
-      state: input.address.state,
-      shipping_service: input.shipping.service,
-      shipping_carrier: input.shipping.carrier,
-      shipping_days: input.shipping.days,
-      shipping_price: input.shipping.price,
-      subtotal,
-      total,
+  // O pedido é criado no servidor: lá os preços são conferidos no banco e o
+  // pedido pode ser lido de volta (o navegador não tem essa permissão).
+  const created = await createOrderOnServer({
+    data: {
+      customer: {
+        name: input.customer.name,
+        email: input.customer.email,
+        phone: input.customer.phone,
+        document: input.customer.document ?? "",
+      },
+      address: {
+        zip: input.address.zip,
+        street: input.address.street,
+        number: input.address.number,
+        complement: input.address.complement ?? "",
+        district: input.address.district ?? "",
+        city: input.address.city,
+        state: input.address.state,
+      },
+      shipping: {
+        service: input.shipping.service,
+        carrier: input.shipping.carrier,
+        days: input.shipping.days,
+        price: input.shipping.price,
+      },
       payment_method: input.payment_method,
       notes: input.notes ?? "",
-    })
-    .select("id,order_number,total,subtotal,shipping_price,created_at")
-    .single();
+      items: input.items.map((i) => ({
+        product_id: i.product_id,
+        size: i.size,
+        color: i.color,
+        quantity: i.quantity,
+      })),
+    },
+  });
 
-  if (error) throw error;
-
-  const { error: itemsError } = await supabase.from("order_items").insert(
-    input.items.map((i) => ({
-      order_id: (data as { id: string }).id,
-      product_id: i.product_id,
-      product_name: i.name,
-      product_slug: i.slug,
-      image_url: i.image,
-      size: i.size,
-      color: i.color,
-      quantity: i.quantity,
-      unit_price: i.price,
-    })),
-  );
-  if (itemsError) throw itemsError;
-
-  return numeric(data as Record<string, unknown>);
+  return created as unknown as Order;
 }
 
 export async function markOrderPaid(orderId: string, reference: string) {
