@@ -135,13 +135,5 @@ export async function quoteShipping(
     },
   ];
 
-  if (merchandise >= FREE_SHIPPING_FROM) {
-    const cheapest = base.reduce((a, b) => (a.price <= b.price ? a : b));
-    cheapest.price = 0;
-    cheapest.service = `${cheapest.service} (frete grátis)`;
-  }
-
-  // simula latência de API
-  await new Promise((r) => setTimeout(r, 400));
-  return base.sort((a, b) => a.price - b.price);
+  return applyFreeShipping(base, merchandise);
 }
