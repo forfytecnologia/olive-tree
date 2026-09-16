@@ -13,8 +13,12 @@ import {
   type PaymentMethod,
 } from "@/lib/payments";
 import { confirmMockPayment, getPublicOrder } from "@/lib/orders.functions";
+import { createMercadoPagoCheckout } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/pedido/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    status: typeof search["status"] === "string" ? (search["status"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Pedido confirmado — Olive Tree Acessórios" },
@@ -29,24 +33,52 @@ export const Route = createFileRoute("/pedido/$id")({
 
 function PedidoPage() {
   const { id } = Route.useParams();
+  const { status } = Route.useSearch();
   const queryClient = useQueryClient();
   const loadOrder = useServerFn(getPublicOrder);
   const confirmPayment = useServerFn(confirmMockPayment);
+  const startCheckout = useServerFn(createMercadoPagoCheckout);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["public-order", id],
     queryFn: () => loadOrder({ data: { id } }),
+    // Voltando do Mercado Pago, o aviso de pagamento pode levar alguns segundos.
+    refetchInterval: (query) => {
+      const current = query.state.data;
+      if (!current || current.payment_status === "pago") return false;
+      return status ? 4000 : false;
+    },
   });
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+
+  const hasLivePayment = Boolean(order?.payment_link);
 
   useEffect(() => {
-    if (!order || order.payment_status === "pago") return;
+    if (!order || order.payment_status === "pago" || order.payment_link) return;
     createPayment({
       method: order.payment_method as PaymentMethod,
       total: order.total,
       orderId: order.id,
     }).then(setIntent);
   }, [order]);
+
+  async function payNow() {
+    if (!order) return;
+    setRedirecting(true);
+    try {
+      const res = await startCheckout({ data: { orderId: order.id } });
+      if (res.url) {
+        window.location.href = res.url;
+        return;
+      }
+      toast.error(res.error ?? "Pagamento online indisponível no momento.");
+    } catch {
+      toast.error("Não foi possível abrir o pagamento.");
+    } finally {
+      setRedirecting(false);
+    }
+  }
 
   if (isLoading) {
     return (
