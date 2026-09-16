@@ -86,7 +86,11 @@ export async function quoteShipping(
   // 1) Melhor Envio (quando a loja tiver token configurado no painel)
   try {
     const live = await quoteShippingLive({
-      data: { zip: onlyDigits(cep), units, merchandise: Math.round(merchandise * 100) / 100 },
+      data: {
+        zip: onlyDigits(cep),
+        units: Math.min(50, Math.max(1, units)),
+        merchandise: Math.min(100000, Math.round(merchandise * 100) / 100),
+      },
     });
     if (live.options.length) {
       return applyFreeShipping(
