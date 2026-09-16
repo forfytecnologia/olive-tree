@@ -229,8 +229,8 @@ function EnvioAdmin() {
               autoComplete="off"
             />
             <span className="mt-2 block text-xs text-muted-foreground">
-              No site do Melhor Envio: Configurações → Tokens → gerar token com a permissão
-              de cálculo de frete (shipping-calculate).
+              No Melhor Envio: menu do seu nome → Gerenciar → Tokens → criar token com a
+              permissão de cálculo de frete. Veja o passo a passo completo acima.
             </span>
           </label>
 
