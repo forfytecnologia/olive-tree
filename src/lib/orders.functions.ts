@@ -51,7 +51,7 @@ export const getPublicOrder = createServerFn({ method: "POST" })
       .select(
         "id,order_number,customer_email,zip,street,number,complement,district,city,state," +
           "shipping_carrier,shipping_service,shipping_days,shipping_price,subtotal,total," +
-          "payment_method,payment_status,fulfillment_status,tracking_code,created_at," +
+          "payment_method,payment_status,payment_link,fulfillment_status,tracking_code,created_at," +
           "order_items(id,product_name,product_slug,image_url,size,color,quantity,unit_price)",
       )
       .eq("id", data.id)
