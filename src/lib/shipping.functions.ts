@@ -211,9 +211,10 @@ export const saveShippingConfig = createServerFn({ method: "POST" })
       box_weight: data.box_weight,
       insurance_enabled: data.insurance_enabled,
       enabled: data.enabled,
+      ...((data.token ?? "").trim()
+        ? { melhor_envio_token: (data.token ?? "").trim() }
+        : {}),
     };
-    const token = (data.token ?? "").trim();
-    if (token) patch["melhor_envio_token"] = token;
 
     const { error } = await supabaseAdmin
       .from("shipping_settings")
