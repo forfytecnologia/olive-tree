@@ -1,10 +1,11 @@
 /**
  * Adaptador de frete.
  *
- * Hoje: simulação local (mock).
- * Depois: trocar a implementação de `quoteShipping` por uma chamada ao
- * Melhor Envio (server function), mantendo exatamente esta assinatura.
+ * 1) Melhor Envio (preço real) quando a loja tem token salvo no painel.
+ * 2) Estimativa local como reserva, para a loja nunca ficar sem frete.
  */
+import { quoteShippingLive } from "./shipping.functions";
+
 
 export type ShippingItem = { quantity: number; price: number };
 
