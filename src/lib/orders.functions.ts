@@ -26,6 +26,7 @@ export type OrderView = {
   total: number;
   payment_method: string;
   payment_status: string;
+  payment_link: string;
   fulfillment_status: string;
   tracking_code: string;
   created_at: string;
