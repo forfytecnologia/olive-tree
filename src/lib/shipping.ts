@@ -1,10 +1,11 @@
 /**
  * Adaptador de frete.
  *
- * Hoje: simulação local (mock).
- * Depois: trocar a implementação de `quoteShipping` por uma chamada ao
- * Melhor Envio (server function), mantendo exatamente esta assinatura.
+ * 1) Melhor Envio (preço real) quando a loja tem token salvo no painel.
+ * 2) Estimativa local como reserva, para a loja nunca ficar sem frete.
  */
+import { quoteShippingLive } from "./shipping.functions";
+
 
 export type ShippingItem = { quantity: number; price: number };
 
@@ -84,13 +85,16 @@ export async function quoteShipping(
 
   // 1) Melhor Envio (quando a loja tiver token configurado no painel)
   try {
-    const { quoteShippingLive } = await import("./shipping.functions");
     const live = await quoteShippingLive({
-      data: { zip: onlyDigits(cep), units, merchandise: Math.round(merchandise * 100) / 100 },
+      data: {
+        zip: onlyDigits(cep),
+        units: Math.min(50, Math.max(1, units)),
+        merchandise: Math.min(100000, Math.round(merchandise * 100) / 100),
+      },
     });
     if (live.options.length) {
       return applyFreeShipping(
-        live.options.map((o) => ({ ...o })),
+        live.options.slice(0, 6).map((o) => ({ ...o })),
         merchandise,
       );
     }
