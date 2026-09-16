@@ -202,7 +202,7 @@ export const saveShippingConfig = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {
+    const patch = {
       sandbox: data.sandbox,
       origin_zip: digits(data.origin_zip),
       box_length: data.box_length,
