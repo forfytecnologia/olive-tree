@@ -16,9 +16,8 @@ import { confirmMockPayment, getPublicOrder } from "@/lib/orders.functions";
 import { createMercadoPagoCheckout } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/pedido/$id")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    status: typeof search["status"] === "string" ? (search["status"] as string) : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { status?: string } =>
+    typeof search["status"] === "string" ? { status: search["status"] as string } : {},
   head: () => ({
     meta: [
       { title: "Pedido confirmado — Olive Tree Acessórios" },

@@ -74,7 +74,7 @@ export const createMercadoPagoCheckout = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order } = await supabaseAdmin
+    const { data: row } = await supabaseAdmin
       .from("orders")
       .select(
         "id,order_number,customer_name,customer_email,customer_phone,subtotal,total," +
@@ -83,6 +83,25 @@ export const createMercadoPagoCheckout = createServerFn({ method: "POST" })
       )
       .eq("id", data.orderId)
       .maybeSingle();
+
+    const order = row as unknown as
+      | {
+          id: string;
+          order_number: number;
+          customer_name: string;
+          customer_email: string;
+          subtotal: number | string;
+          total: number | string;
+          shipping_price: number | string;
+          payment_status: string;
+          payment_link: string | null;
+          order_items?: Array<{
+            product_name: string;
+            quantity: number;
+            unit_price: number | string;
+          }>;
+        }
+      | null;
 
     if (!order) return { url: null, error: "Pedido não encontrado." };
     if (order.payment_status === "pago") return { url: null, error: null };
