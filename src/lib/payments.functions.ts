@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestUrl } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { logPaymentEvent } from "@/lib/payment-events.server";
 
 /**
  * Integração Mercado Pago (Checkout Pro).
@@ -176,10 +177,28 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
         if (!res.ok) {
           const text = await res.text();
           console.error("[infinitepay] link", res.status, text.slice(0, 400));
+          await logPaymentEvent({
+            orderId: order.id,
+            provider: "infinitepay",
+            eventType: "link_de_pagamento_falhou",
+            level: "erro",
+            message: `A InfinitePay recusou a criação do link de pagamento (código ${res.status}).`,
+            payload: { codigo: res.status, resposta: text.slice(0, 1500), total },
+          });
           return { url: null, error: "Pagamento online indisponível no momento." };
         }
         const json = (await res.json()) as { url?: string };
-        if (!json.url) return { url: null, error: "Pagamento online indisponível no momento." };
+        if (!json.url) {
+          await logPaymentEvent({
+            orderId: order.id,
+            provider: "infinitepay",
+            eventType: "link_de_pagamento_vazio",
+            level: "erro",
+            message: "A InfinitePay respondeu sem o endereço da tela de pagamento.",
+            payload: json,
+          });
+          return { url: null, error: "Pagamento online indisponível no momento." };
+        }
 
         await supabaseAdmin
           .from("orders")
@@ -189,6 +208,14 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
         return { url: json.url, error: null };
       } catch (err) {
         console.error("[infinitepay]", err);
+        await logPaymentEvent({
+          orderId: order.id,
+          provider: "infinitepay",
+          eventType: "falha_de_comunicacao",
+          level: "erro",
+          message: "Não foi possível falar com a InfinitePay para criar o link de pagamento.",
+          payload: { detalhe: String(err) },
+        });
         return { url: null, error: "Pagamento online indisponível no momento." };
       }
     }
@@ -248,6 +275,14 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
       if (!res.ok) {
         const text = await res.text();
         console.error("[mercado-pago] preference", res.status, text.slice(0, 400));
+        await logPaymentEvent({
+          orderId: order.id,
+          provider: "mercadopago",
+          eventType: "link_de_pagamento_falhou",
+          level: "erro",
+          message: `O Mercado Pago recusou a criação da tela de pagamento (código ${res.status}).`,
+          payload: { codigo: res.status, resposta: text.slice(0, 1500), total, desconto: discount },
+        });
         return { url: null, error: "Pagamento online indisponível no momento." };
       }
 
@@ -255,7 +290,17 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
       const url = settings.sandbox
         ? (pref.sandbox_init_point ?? pref.init_point)
         : (pref.init_point ?? pref.sandbox_init_point);
-      if (!url) return { url: null, error: "Pagamento online indisponível no momento." };
+      if (!url) {
+        await logPaymentEvent({
+          orderId: order.id,
+          provider: "mercadopago",
+          eventType: "link_de_pagamento_vazio",
+          level: "erro",
+          message: "O Mercado Pago respondeu sem o endereço da tela de pagamento.",
+          payload: pref,
+        });
+        return { url: null, error: "Pagamento online indisponível no momento." };
+      }
 
       await supabaseAdmin
         .from("orders")
@@ -265,6 +310,14 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
       return { url, error: null };
     } catch (err) {
       console.error("[mercado-pago]", err);
+      await logPaymentEvent({
+        orderId: order.id,
+        provider: "mercadopago",
+        eventType: "falha_de_comunicacao",
+        level: "erro",
+        message: "Não foi possível falar com o Mercado Pago para criar a tela de pagamento.",
+        payload: { detalhe: String(err) },
+      });
       return { url: null, error: "Pagamento online indisponível no momento." };
     }
   });
@@ -431,11 +484,30 @@ export const confirmInfinitePayPayment = createServerFn({ method: "POST" })
       );
       if (!res.ok) {
         console.error("[infinitepay] payment_check", res.status);
+        await logPaymentEvent({
+          orderId: data.orderId,
+          provider: "infinitepay",
+          eventType: "conferencia_falhou",
+          level: "erro",
+          message: `Não foi possível conferir na InfinitePay se o pagamento foi feito (código ${res.status}).`,
+          payload: { codigo: res.status, transacao: data.transactionNsu },
+        });
         return { paid: false };
       }
       const json = (await res.json()) as { success?: boolean; paid?: boolean };
       const paid = json.paid === true || json.success === true;
-      if (!paid) return { paid: false };
+      if (!paid) {
+        await logPaymentEvent({
+          orderId: data.orderId,
+          provider: "infinitepay",
+          eventType: "volta_sem_pagamento_confirmado",
+          level: "aviso",
+          message:
+            "A compradora voltou da tela da InfinitePay, mas o pagamento ainda não aparece como concluído.",
+          payload: { resposta: json, transacao: data.transactionNsu },
+        });
+        return { paid: false };
+      }
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       await supabaseAdmin
@@ -450,6 +522,14 @@ export const confirmInfinitePayPayment = createServerFn({ method: "POST" })
       return { paid: true };
     } catch (err) {
       console.error("[infinitepay] confirm", err);
+      await logPaymentEvent({
+        orderId: data.orderId,
+        provider: "infinitepay",
+        eventType: "falha_de_comunicacao",
+        level: "erro",
+        message: "Não foi possível falar com a InfinitePay para conferir o pagamento.",
+        payload: { detalhe: String(err) },
+      });
       return { paid: false };
     }
   });
