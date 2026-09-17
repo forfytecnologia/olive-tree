@@ -146,6 +146,54 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
     const discount = Math.max(0, Math.round((subtotal + shippingPrice - total) * 100) / 100);
 
     const origin = siteOrigin();
+
+    if (provider === "infinitepay") {
+      const handle = settings.infinitepay_handle.replace(/^\$/, "").trim();
+      const body = {
+        handle,
+        order_nsu: order.id,
+        redirect_url: `${origin}/pedido/${order.id}`,
+        customer: {
+          name: order.customer_name,
+          email: order.customer_email,
+          phone_number: (order as { customer_phone?: string }).customer_phone ?? "",
+        },
+        items: [
+          {
+            quantity: 1,
+            price: Math.round(total * 100),
+            description: `Pedido nº ${order.order_number} — Olive Tree`,
+          },
+        ],
+      };
+
+      try {
+        const res = await fetch(`${IP_API}/invoices/public/checkout/links`, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("[infinitepay] link", res.status, text.slice(0, 400));
+          return { url: null, error: "Pagamento online indisponível no momento." };
+        }
+        const json = (await res.json()) as { url?: string };
+        if (!json.url) return { url: null, error: "Pagamento online indisponível no momento." };
+
+        await supabaseAdmin
+          .from("orders")
+          .update({ payment_provider: "infinitepay", payment_link: json.url })
+          .eq("id", order.id);
+
+        return { url: json.url, error: null };
+      } catch (err) {
+        console.error("[infinitepay]", err);
+        return { url: null, error: "Pagamento online indisponível no momento." };
+      }
+    }
+
+
     const preference: Record<string, unknown> = {
       external_reference: order.id,
       statement_descriptor: "OLIVETREE",
