@@ -79,11 +79,11 @@ function Index() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-2">
           <img
             src={brandAsset.url}
-            alt="Óculos de sol Olive Tree sobre linho com ramo de oliveira"
-            width={1600}
-            height={912}
+            alt="Embalagem Olive Tree com sacola, caixa e óculos de sol"
+            width={1067}
+            height={1280}
             loading="lazy"
-            className="aspect-[16/10] w-full object-cover"
+            className="aspect-[4/5] w-full object-cover object-center"
           />
           <div>
             <p className="eyebrow">A marca</p>
