@@ -11,21 +11,28 @@ import { z } from "zod";
  */
 
 const MP_API = "https://api.mercadopago.com";
+const IP_API = "https://api.infinitepay.io";
+
+export type PaymentProvider = "mercadopago" | "infinitepay";
 
 export type PaymentConfigView = {
+  provider: PaymentProvider;
   hasToken: boolean;
   tokenPreview: string;
   publicKey: string;
   hasWebhookSecret: boolean;
+  infinitepayHandle: string;
   sandbox: boolean;
   enabled: boolean;
   webhookUrl: string;
 };
 
 type PaymentSettings = {
+  provider: string;
   mp_access_token: string;
   mp_public_key: string;
   mp_webhook_secret: string;
+  infinitepay_handle: string;
   sandbox: boolean;
   enabled: boolean;
 };
@@ -34,11 +41,14 @@ async function loadPaymentSettings(): Promise<PaymentSettings | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("payment_settings")
-    .select("mp_access_token,mp_public_key,mp_webhook_secret,sandbox,enabled")
+    .select(
+      "provider,mp_access_token,mp_public_key,mp_webhook_secret,infinitepay_handle,sandbox,enabled",
+    )
     .eq("id", true)
     .maybeSingle();
   return (data as PaymentSettings | null) ?? null;
 }
+
 
 /** Domínio oficial da loja — usado no aviso automático e no retorno do pagamento. */
 const OFFICIAL_SITE_URL = "https://www.useolivetree.com.br";
