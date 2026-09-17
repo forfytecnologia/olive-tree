@@ -333,9 +333,42 @@ export const testPaymentConfig = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<{ ok: boolean; message: string }> => {
     await assertAdmin(context as never);
     const settings = await loadPaymentSettings();
+    const provider = (settings?.provider ?? "mercadopago") as PaymentProvider;
+
+    if (provider === "infinitepay") {
+      const handle = (settings?.infinitepay_handle ?? "").replace(/^\$/, "").trim();
+      if (!handle) {
+        return { ok: false, message: "Informe o seu usuário ($handle) da InfinitePay primeiro." };
+      }
+      try {
+        const res = await fetch(`${IP_API}/invoices/public/checkout/links`, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({
+            handle,
+            order_nsu: `teste-${Date.now()}`,
+            items: [{ quantity: 1, price: 100, description: "Teste de conexão Olive Tree" }],
+          }),
+        });
+        if (res.ok) {
+          return { ok: true, message: `Conexão funcionando. Usuário InfinitePay: $${handle}.` };
+        }
+        if (res.status === 404 || res.status === 400) {
+          return {
+            ok: false,
+            message: "Usuário não encontrado na InfinitePay. Confira o $usuário da conta.",
+          };
+        }
+        return { ok: false, message: `A InfinitePay respondeu com erro ${res.status}.` };
+      } catch {
+        return { ok: false, message: "Não foi possível falar com a InfinitePay agora." };
+      }
+    }
+
     if (!settings || !settings.mp_access_token) {
       return { ok: false, message: "Salve a chave de acesso do Mercado Pago primeiro." };
     }
+
     try {
       const res = await fetch(`${MP_API}/users/me`, {
         headers: {
