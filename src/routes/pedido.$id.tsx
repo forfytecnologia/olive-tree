@@ -13,7 +13,7 @@ import {
   type PaymentMethod,
 } from "@/lib/payments";
 import { confirmMockPayment, getPublicOrder } from "@/lib/orders.functions";
-import { createMercadoPagoCheckout } from "@/lib/payments.functions";
+import { createGatewayCheckout } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/pedido/$id")({
   validateSearch: (search: Record<string, unknown>): { status?: string } =>
@@ -36,7 +36,7 @@ function PedidoPage() {
   const queryClient = useQueryClient();
   const loadOrder = useServerFn(getPublicOrder);
   const confirmPayment = useServerFn(confirmMockPayment);
-  const startCheckout = useServerFn(createMercadoPagoCheckout);
+  const startCheckout = useServerFn(createGatewayCheckout);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["public-order", id],

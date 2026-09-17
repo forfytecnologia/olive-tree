@@ -9,7 +9,7 @@ import { formatPrice } from "@/lib/catalog";
 import { MAX_INSTALLMENTS, installmentValue, pixDiscount } from "@/lib/pricing";
 import { createOrder } from "@/lib/orders";
 import { createPayment, PAYMENT_LABEL, type PaymentMethod } from "@/lib/payments";
-import { createMercadoPagoCheckout } from "@/lib/payments.functions";
+import { createGatewayCheckout } from "@/lib/payments.functions";
 import {
   isValidCep,
   lookupCep,
@@ -146,7 +146,7 @@ function CheckoutPage() {
       });
 
       // Pagamento real (Mercado Pago) quando a loja tiver a chave configurada.
-      const checkout = await createMercadoPagoCheckout({ data: { orderId: order.id } });
+      const checkout = await createGatewayCheckout({ data: { orderId: order.id } });
       if (checkout.url) {
         clear();
         window.location.href = checkout.url;
