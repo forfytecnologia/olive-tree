@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
+import { logPaymentEvent } from "@/lib/payment-events.server";
 
 /**
  * Aviso automático do Mercado Pago.
