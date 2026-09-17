@@ -82,17 +82,21 @@ async function assertAdmin(context: { supabase: unknown; userId: string }) {
 }
 
 /**
- * Cria (ou recria) o link de pagamento do Mercado Pago para um pedido.
- * Devolve `url: null` quando a integração está desligada ou falha — nesse caso
- * o site continua no modo simulado.
+ * Cria (ou recria) o link de pagamento do gateway escolhido pela loja
+ * (Mercado Pago ou InfinitePay). Devolve `url: null` quando a integração está
+ * desligada ou falha — nesse caso o site continua no modo simulado.
  */
-export const createMercadoPagoCheckout = createServerFn({ method: "POST" })
+export const createGatewayCheckout = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ orderId: z.string().uuid() }).parse(data))
   .handler(async ({ data }): Promise<{ url: string | null; error: string | null }> => {
     const settings = await loadPaymentSettings();
-    if (!settings || !settings.enabled || !settings.mp_access_token) {
+    const provider = (settings?.provider ?? "mercadopago") as PaymentProvider;
+    if (!settings || !settings.enabled) return { url: null, error: null };
+    if (provider === "mercadopago" && !settings.mp_access_token) return { url: null, error: null };
+    if (provider === "infinitepay" && !settings.infinitepay_handle) {
       return { url: null, error: null };
     }
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
