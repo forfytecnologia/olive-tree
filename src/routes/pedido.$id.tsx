@@ -41,11 +41,13 @@ export const Route = createFileRoute("/pedido/$id")({
 
 function PedidoPage() {
   const { id } = Route.useParams();
-  const { status } = Route.useSearch();
+  const { status, transaction_nsu: transactionNsu, slug } = Route.useSearch();
   const queryClient = useQueryClient();
   const loadOrder = useServerFn(getPublicOrder);
   const confirmPayment = useServerFn(confirmMockPayment);
   const startCheckout = useServerFn(createGatewayCheckout);
+  const confirmInfinitePay = useServerFn(confirmInfinitePayPayment);
+
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["public-order", id],
