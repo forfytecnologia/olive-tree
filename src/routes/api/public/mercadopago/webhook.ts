@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
+import { logPaymentEvent } from "@/lib/payment-events";
 
 /**
  * Aviso automático do Mercado Pago.
@@ -80,7 +81,15 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
 
         const accessToken = settings?.mp_access_token ?? "";
         const secret = settings?.mp_webhook_secret ?? "";
-        if (!accessToken) return new Response("ok");
+        if (!accessToken) {
+          await logPaymentEvent({
+            eventType: "aviso_recebido_sem_chave",
+            level: "aviso",
+            message: "Chegou um aviso do Mercado Pago, mas a loja não tem a chave de acesso salva no painel.",
+            payload: { aviso: payload, tipo: type, id_pagamento: dataId },
+          });
+          return new Response("ok");
+        }
 
         if (secret) {
           const valid = verifySignature(
@@ -89,27 +98,64 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
             dataId,
             secret,
           );
-          if (!valid) return new Response("Invalid signature", { status: 401 });
+          if (!valid) {
+            await logPaymentEvent({
+              eventType: "assinatura_invalida",
+              level: "erro",
+              message:
+                "O aviso recebido não passou na conferência de segurança (assinatura diferente da esperada).",
+              payload: { aviso: payload, tipo: type, id_pagamento: dataId },
+            });
+            return new Response("Invalid signature", { status: 401 });
+          }
         }
 
         const res = await fetch(`${MP_API}/v1/payments/${dataId}`, {
           headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
         });
         if (!res.ok) {
+          const body = await res.text().catch(() => "");
           console.error("[mercado-pago webhook] payment lookup", res.status);
+          await logPaymentEvent({
+            eventType: "consulta_pagamento_falhou",
+            level: "erro",
+            message: `Não foi possível consultar o pagamento no Mercado Pago (código ${res.status}).`,
+            payload: { id_pagamento: dataId, codigo: res.status, resposta: body.slice(0, 1500) },
+          });
           return new Response("ok");
         }
 
         const payment = (await res.json()) as {
           id?: number | string;
           status?: string;
+          status_detail?: string;
           external_reference?: string;
         };
         const orderId = payment.external_reference ?? "";
         const mapped = mapStatus(String(payment.status ?? ""));
-        if (!orderId || !mapped) return new Response("ok");
 
-        await supabaseAdmin
+        if (!orderId) {
+          await logPaymentEvent({
+            eventType: "pagamento_sem_pedido",
+            level: "erro",
+            message: "Um pagamento foi recebido mas não veio ligado a nenhum pedido da loja.",
+            payload: payment,
+          });
+          return new Response("ok");
+        }
+
+        if (!mapped) {
+          await logPaymentEvent({
+            orderId,
+            eventType: "situacao_nao_tratada",
+            level: "aviso",
+            message: `O pagamento está na situação "${payment.status ?? "desconhecida"}" e o pedido continua aguardando.`,
+            payload: payment,
+          });
+          return new Response("ok");
+        }
+
+        const { error: updateError } = await supabaseAdmin
           .from("orders")
           .update({
             payment_status: mapped.payment_status,
@@ -117,6 +163,16 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
             payment_provider: "mercadopago",
           })
           .eq("id", orderId);
+
+        await logPaymentEvent({
+          orderId,
+          eventType: updateError ? "atualizacao_do_pedido_falhou" : "pedido_atualizado",
+          level: updateError ? "erro" : mapped.payment_status === "pago" ? "info" : "aviso",
+          message: updateError
+            ? "O pagamento foi confirmado no Mercado Pago, mas o pedido não conseguiu mudar de situação na loja."
+            : `Pedido marcado como "${mapped.payment_status}" a partir do aviso do Mercado Pago.`,
+          payload: { pagamento: payment, erro: updateError?.message ?? null },
+        });
 
         return new Response("ok");
       },

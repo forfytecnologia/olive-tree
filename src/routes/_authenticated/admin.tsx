@@ -15,6 +15,7 @@ const LINKS = [
   { to: "/admin/categorias", label: "Categorias", exact: false },
   { to: "/admin/envio", label: "Envio", exact: false },
   { to: "/admin/pagamento", label: "Pagamento", exact: false },
+  { to: "/admin/diagnostico", label: "Diagnóstico", exact: false },
   { to: "/admin/config", label: "Configurações", exact: false },
 ] as const;
 
