@@ -397,3 +397,59 @@ export const testPaymentConfig = createServerFn({ method: "POST" })
       return { ok: false, message: "Não foi possível falar com o Mercado Pago agora." };
     }
   });
+
+/**
+ * Confirma um pagamento da InfinitePay quando a cliente volta da tela de
+ * pagamento (a InfinitePay não envia aviso automático como o Mercado Pago).
+ */
+export const confirmInfinitePayPayment = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        orderId: z.string().uuid(),
+        transactionNsu: z.string().max(200),
+        slug: z.string().max(200).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }): Promise<{ paid: boolean }> => {
+    const settings = await loadPaymentSettings();
+    const handle = (settings?.infinitepay_handle ?? "").replace(/^\$/, "").trim();
+    if (!handle) return { paid: false };
+
+    try {
+      const params = new URLSearchParams({
+        handle,
+        transaction_nsu: data.transactionNsu,
+        external_order_nsu: data.orderId,
+      });
+      if (data.slug) params.set("slug", data.slug);
+
+      const res = await fetch(
+        `${IP_API}/invoices/public/checkout/payment_check?${params.toString()}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) {
+        console.error("[infinitepay] payment_check", res.status);
+        return { paid: false };
+      }
+      const json = (await res.json()) as { success?: boolean; paid?: boolean };
+      const paid = json.paid === true || json.success === true;
+      if (!paid) return { paid: false };
+
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin
+        .from("orders")
+        .update({
+          payment_status: "pago",
+          payment_provider: "infinitepay",
+          payment_reference: data.transactionNsu,
+        })
+        .eq("id", data.orderId);
+
+      return { paid: true };
+    } catch (err) {
+      console.error("[infinitepay] confirm", err);
+      return { paid: false };
+    }
+  });
