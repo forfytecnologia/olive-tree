@@ -13,11 +13,20 @@ import {
   type PaymentMethod,
 } from "@/lib/payments";
 import { confirmMockPayment, getPublicOrder } from "@/lib/orders.functions";
-import { createMercadoPagoCheckout } from "@/lib/payments.functions";
+import { confirmInfinitePayPayment, createGatewayCheckout } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/pedido/$id")({
-  validateSearch: (search: Record<string, unknown>): { status?: string } =>
-    typeof search["status"] === "string" ? { status: search["status"] as string } : {},
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { status?: string; transaction_nsu?: string; slug?: string } => {
+    const out: { status?: string; transaction_nsu?: string; slug?: string } = {};
+    if (typeof search["status"] === "string") out.status = search["status"];
+    if (typeof search["transaction_nsu"] === "string")
+      out.transaction_nsu = search["transaction_nsu"];
+    if (typeof search["slug"] === "string") out.slug = search["slug"];
+    return out;
+  },
+
   head: () => ({
     meta: [
       { title: "Pedido confirmado — Olive Tree Acessórios" },
@@ -32,11 +41,13 @@ export const Route = createFileRoute("/pedido/$id")({
 
 function PedidoPage() {
   const { id } = Route.useParams();
-  const { status } = Route.useSearch();
+  const { status, transaction_nsu: transactionNsu, slug } = Route.useSearch();
   const queryClient = useQueryClient();
   const loadOrder = useServerFn(getPublicOrder);
   const confirmPayment = useServerFn(confirmMockPayment);
-  const startCheckout = useServerFn(createMercadoPagoCheckout);
+  const startCheckout = useServerFn(createGatewayCheckout);
+  const confirmInfinitePay = useServerFn(confirmInfinitePayPayment);
+
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["public-order", id],
@@ -45,7 +56,7 @@ function PedidoPage() {
     refetchInterval: (query) => {
       const current = query.state.data;
       if (!current || current.payment_status === "pago") return false;
-      return status ? 4000 : false;
+      return status || transactionNsu ? 4000 : false;
     },
   });
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
@@ -61,6 +72,26 @@ function PedidoPage() {
       orderId: order.id,
     }).then(setIntent);
   }, [order]);
+
+  // Volta da InfinitePay: confirmamos o pagamento pelo código da transação.
+  useEffect(() => {
+    if (!transactionNsu || !order || order.payment_status === "pago") return;
+    let cancelled = false;
+    confirmInfinitePay({
+      data: { orderId: id, transactionNsu, ...(slug ? { slug } : {}) },
+    })
+      .then((res) => {
+        if (!cancelled && res.paid) {
+          queryClient.invalidateQueries({ queryKey: ["public-order", id] });
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactionNsu, slug, id, order?.payment_status]);
+
 
   async function payNow() {
     if (!order) return;

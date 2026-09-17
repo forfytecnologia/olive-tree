@@ -201,27 +201,33 @@ export type Database = {
         Row: {
           enabled: boolean
           id: boolean
+          infinitepay_handle: string
           mp_access_token: string
           mp_public_key: string
           mp_webhook_secret: string
+          provider: string
           sandbox: boolean
           updated_at: string
         }
         Insert: {
           enabled?: boolean
           id?: boolean
+          infinitepay_handle?: string
           mp_access_token?: string
           mp_public_key?: string
           mp_webhook_secret?: string
+          provider?: string
           sandbox?: boolean
           updated_at?: string
         }
         Update: {
           enabled?: boolean
           id?: boolean
+          infinitepay_handle?: string
           mp_access_token?: string
           mp_public_key?: string
           mp_webhook_secret?: string
+          provider?: string
           sandbox?: boolean
           updated_at?: string
         }

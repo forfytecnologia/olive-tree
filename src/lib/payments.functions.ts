@@ -11,21 +11,28 @@ import { z } from "zod";
  */
 
 const MP_API = "https://api.mercadopago.com";
+const IP_API = "https://api.infinitepay.io";
+
+export type PaymentProvider = "mercadopago" | "infinitepay";
 
 export type PaymentConfigView = {
+  provider: PaymentProvider;
   hasToken: boolean;
   tokenPreview: string;
   publicKey: string;
   hasWebhookSecret: boolean;
+  infinitepayHandle: string;
   sandbox: boolean;
   enabled: boolean;
   webhookUrl: string;
 };
 
 type PaymentSettings = {
+  provider: string;
   mp_access_token: string;
   mp_public_key: string;
   mp_webhook_secret: string;
+  infinitepay_handle: string;
   sandbox: boolean;
   enabled: boolean;
 };
@@ -34,11 +41,14 @@ async function loadPaymentSettings(): Promise<PaymentSettings | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("payment_settings")
-    .select("mp_access_token,mp_public_key,mp_webhook_secret,sandbox,enabled")
+    .select(
+      "provider,mp_access_token,mp_public_key,mp_webhook_secret,infinitepay_handle,sandbox,enabled",
+    )
     .eq("id", true)
     .maybeSingle();
   return (data as PaymentSettings | null) ?? null;
 }
+
 
 /** Domínio oficial da loja — usado no aviso automático e no retorno do pagamento. */
 const OFFICIAL_SITE_URL = "https://www.useolivetree.com.br";
@@ -72,17 +82,21 @@ async function assertAdmin(context: { supabase: unknown; userId: string }) {
 }
 
 /**
- * Cria (ou recria) o link de pagamento do Mercado Pago para um pedido.
- * Devolve `url: null` quando a integração está desligada ou falha — nesse caso
- * o site continua no modo simulado.
+ * Cria (ou recria) o link de pagamento do gateway escolhido pela loja
+ * (Mercado Pago ou InfinitePay). Devolve `url: null` quando a integração está
+ * desligada ou falha — nesse caso o site continua no modo simulado.
  */
-export const createMercadoPagoCheckout = createServerFn({ method: "POST" })
+export const createGatewayCheckout = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ orderId: z.string().uuid() }).parse(data))
   .handler(async ({ data }): Promise<{ url: string | null; error: string | null }> => {
     const settings = await loadPaymentSettings();
-    if (!settings || !settings.enabled || !settings.mp_access_token) {
+    const provider = (settings?.provider ?? "mercadopago") as PaymentProvider;
+    if (!settings || !settings.enabled) return { url: null, error: null };
+    if (provider === "mercadopago" && !settings.mp_access_token) return { url: null, error: null };
+    if (provider === "infinitepay" && !settings.infinitepay_handle) {
       return { url: null, error: null };
     }
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
@@ -132,6 +146,54 @@ export const createMercadoPagoCheckout = createServerFn({ method: "POST" })
     const discount = Math.max(0, Math.round((subtotal + shippingPrice - total) * 100) / 100);
 
     const origin = siteOrigin();
+
+    if (provider === "infinitepay") {
+      const handle = settings.infinitepay_handle.replace(/^\$/, "").trim();
+      const body = {
+        handle,
+        order_nsu: order.id,
+        redirect_url: `${origin}/pedido/${order.id}`,
+        customer: {
+          name: order.customer_name,
+          email: order.customer_email,
+          phone_number: (order as { customer_phone?: string }).customer_phone ?? "",
+        },
+        items: [
+          {
+            quantity: 1,
+            price: Math.round(total * 100),
+            description: `Pedido nº ${order.order_number} — Olive Tree`,
+          },
+        ],
+      };
+
+      try {
+        const res = await fetch(`${IP_API}/invoices/public/checkout/links`, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("[infinitepay] link", res.status, text.slice(0, 400));
+          return { url: null, error: "Pagamento online indisponível no momento." };
+        }
+        const json = (await res.json()) as { url?: string };
+        if (!json.url) return { url: null, error: "Pagamento online indisponível no momento." };
+
+        await supabaseAdmin
+          .from("orders")
+          .update({ payment_provider: "infinitepay", payment_link: json.url })
+          .eq("id", order.id);
+
+        return { url: json.url, error: null };
+      } catch (err) {
+        console.error("[infinitepay]", err);
+        return { url: null, error: "Pagamento online indisponível no momento." };
+      }
+    }
+
+
     const preference: Record<string, unknown> = {
       external_reference: order.id,
       statement_descriptor: "OLIVETREE",
@@ -215,10 +277,12 @@ export const getPaymentConfig = createServerFn({ method: "POST" })
     const token = s?.mp_access_token ?? "";
     const origin = siteOrigin();
     return {
+      provider: ((s?.provider ?? "mercadopago") as PaymentProvider),
       hasToken: token.length > 0,
       tokenPreview: token ? `••••••••${token.slice(-6)}` : "",
       publicKey: s?.mp_public_key ?? "",
       hasWebhookSecret: (s?.mp_webhook_secret ?? "").length > 0,
+      infinitepayHandle: s?.infinitepay_handle ?? "",
       sandbox: s?.sandbox ?? false,
       enabled: s?.enabled ?? false,
       webhookUrl: origin ? `${origin}/api/public/mercadopago/webhook` : "",
@@ -226,12 +290,15 @@ export const getPaymentConfig = createServerFn({ method: "POST" })
   });
 
 const configSchema = z.object({
+  provider: z.enum(["mercadopago", "infinitepay"]),
   access_token: z.string().max(4000).optional(),
   public_key: z.string().max(400),
   webhook_secret: z.string().max(400).optional(),
+  infinitepay_handle: z.string().max(120),
   sandbox: z.boolean(),
   enabled: z.boolean(),
 });
+
 
 export const savePaymentConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -240,9 +307,12 @@ export const savePaymentConfig = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch = {
+      provider: data.provider,
       mp_public_key: data.public_key.trim(),
+      infinitepay_handle: data.infinitepay_handle.replace(/^\$/, "").trim(),
       sandbox: data.sandbox,
       enabled: data.enabled,
+
       ...((data.access_token ?? "").trim()
         ? { mp_access_token: (data.access_token ?? "").trim() }
         : {}),
@@ -263,9 +333,42 @@ export const testPaymentConfig = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<{ ok: boolean; message: string }> => {
     await assertAdmin(context as never);
     const settings = await loadPaymentSettings();
+    const provider = (settings?.provider ?? "mercadopago") as PaymentProvider;
+
+    if (provider === "infinitepay") {
+      const handle = (settings?.infinitepay_handle ?? "").replace(/^\$/, "").trim();
+      if (!handle) {
+        return { ok: false, message: "Informe o seu usuário ($handle) da InfinitePay primeiro." };
+      }
+      try {
+        const res = await fetch(`${IP_API}/invoices/public/checkout/links`, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({
+            handle,
+            order_nsu: `teste-${Date.now()}`,
+            items: [{ quantity: 1, price: 100, description: "Teste de conexão Olive Tree" }],
+          }),
+        });
+        if (res.ok) {
+          return { ok: true, message: `Conexão funcionando. Usuário InfinitePay: $${handle}.` };
+        }
+        if (res.status === 404 || res.status === 400) {
+          return {
+            ok: false,
+            message: "Usuário não encontrado na InfinitePay. Confira o $usuário da conta.",
+          };
+        }
+        return { ok: false, message: `A InfinitePay respondeu com erro ${res.status}.` };
+      } catch {
+        return { ok: false, message: "Não foi possível falar com a InfinitePay agora." };
+      }
+    }
+
     if (!settings || !settings.mp_access_token) {
       return { ok: false, message: "Salve a chave de acesso do Mercado Pago primeiro." };
     }
+
     try {
       const res = await fetch(`${MP_API}/users/me`, {
         headers: {
@@ -292,5 +395,61 @@ export const testPaymentConfig = createServerFn({ method: "POST" })
       };
     } catch {
       return { ok: false, message: "Não foi possível falar com o Mercado Pago agora." };
+    }
+  });
+
+/**
+ * Confirma um pagamento da InfinitePay quando a cliente volta da tela de
+ * pagamento (a InfinitePay não envia aviso automático como o Mercado Pago).
+ */
+export const confirmInfinitePayPayment = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        orderId: z.string().uuid(),
+        transactionNsu: z.string().max(200),
+        slug: z.string().max(200).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }): Promise<{ paid: boolean }> => {
+    const settings = await loadPaymentSettings();
+    const handle = (settings?.infinitepay_handle ?? "").replace(/^\$/, "").trim();
+    if (!handle) return { paid: false };
+
+    try {
+      const params = new URLSearchParams({
+        handle,
+        transaction_nsu: data.transactionNsu,
+        external_order_nsu: data.orderId,
+      });
+      if (data.slug) params.set("slug", data.slug);
+
+      const res = await fetch(
+        `${IP_API}/invoices/public/checkout/payment_check?${params.toString()}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) {
+        console.error("[infinitepay] payment_check", res.status);
+        return { paid: false };
+      }
+      const json = (await res.json()) as { success?: boolean; paid?: boolean };
+      const paid = json.paid === true || json.success === true;
+      if (!paid) return { paid: false };
+
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin
+        .from("orders")
+        .update({
+          payment_status: "pago",
+          payment_provider: "infinitepay",
+          payment_reference: data.transactionNsu,
+        })
+        .eq("id", data.orderId);
+
+      return { paid: true };
+    } catch (err) {
+      console.error("[infinitepay] confirm", err);
+      return { paid: false };
     }
   });
