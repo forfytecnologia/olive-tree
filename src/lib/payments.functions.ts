@@ -307,9 +307,12 @@ export const savePaymentConfig = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch = {
+      provider: data.provider,
       mp_public_key: data.public_key.trim(),
+      infinitepay_handle: data.infinitepay_handle.replace(/^\$/, "").trim(),
       sandbox: data.sandbox,
       enabled: data.enabled,
+
       ...((data.access_token ?? "").trim()
         ? { mp_access_token: (data.access_token ?? "").trim() }
         : {}),
