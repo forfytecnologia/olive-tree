@@ -50,7 +50,7 @@ function DiagnosticoAdmin() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [openPayload, setOpenPayload] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<PaymentEventView[]>({
     queryKey: ["payment-events", onlyProblems],
     queryFn: () => load({ data: { onlyProblems } }),
   });
@@ -159,7 +159,7 @@ function DiagnosticoAdmin() {
 
                 {openPayload === event.id ? (
                   <pre className="mt-4 max-h-80 overflow-auto bg-muted p-4 text-xs text-muted-foreground">
-                    {JSON.stringify(event.payload, null, 2)}
+                    {event.payload}
                   </pre>
                 ) : null}
               </li>

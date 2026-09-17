@@ -17,7 +17,7 @@ export type PaymentEventView = {
   event_type: string;
   level: string;
   message: string;
-  payload: unknown;
+  payload: string;
   order_id: string | null;
   order_number: number | null;
   order_status: string | null;
@@ -77,7 +77,7 @@ export const listPaymentEvents = createServerFn({ method: "POST" })
         event_type: String(r["event_type"] ?? ""),
         level: String(r["level"] ?? "info"),
         message: String(r["message"] ?? ""),
-        payload: r["payload"] ?? {},
+        payload: JSON.stringify(r["payload"] ?? {}, null, 2),
         order_id: (r["order_id"] as string | null) ?? null,
         order_number: order?.order_number ?? null,
         order_status: order?.payment_status ?? null,
