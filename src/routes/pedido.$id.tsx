@@ -73,6 +73,26 @@ function PedidoPage() {
     }).then(setIntent);
   }, [order]);
 
+  // Volta da InfinitePay: confirmamos o pagamento pelo código da transação.
+  useEffect(() => {
+    if (!transactionNsu || !order || order.payment_status === "pago") return;
+    let cancelled = false;
+    confirmInfinitePay({
+      data: { orderId: id, transactionNsu, ...(slug ? { slug } : {}) },
+    })
+      .then((res) => {
+        if (!cancelled && res.paid) {
+          queryClient.invalidateQueries({ queryKey: ["public-order", id] });
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactionNsu, slug, id, order?.payment_status]);
+
+
   async function payNow() {
     if (!order) return;
     setRedirecting(true);
