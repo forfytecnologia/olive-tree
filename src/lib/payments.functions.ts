@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestUrl } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { logPaymentEvent } from "@/lib/payment-events.server";
+import { logPaymentEvent } from "@/lib/payment-events";
 
 /**
  * Integração Mercado Pago (Checkout Pro).
