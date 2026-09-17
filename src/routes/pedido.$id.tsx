@@ -56,7 +56,7 @@ function PedidoPage() {
     refetchInterval: (query) => {
       const current = query.state.data;
       if (!current || current.payment_status === "pago") return false;
-      return status ? 4000 : false;
+      return status || transactionNsu ? 4000 : false;
     },
   });
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
