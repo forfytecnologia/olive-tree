@@ -41,11 +41,11 @@ function Index() {
       <section className="relative">
         <img
           src={heroAsset.url}
-          alt="Mulher usando óculos de sol Olive Tree sob luz natural"
-          width={1920}
-          height={1088}
+          alt="Mulher usando óculos de sol Olive Tree entre ramos de oliveira"
+          width={1136}
+          height={1280}
           fetchPriority="high"
-          className="aspect-[4/5] w-full object-cover object-right sm:aspect-[16/10] lg:aspect-[16/7]"
+          className="aspect-[4/5] w-full object-cover object-[75%_20%] sm:aspect-[16/10] lg:aspect-[16/7]"
         />
         <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/70 via-primary/10 to-transparent sm:bg-gradient-to-r sm:from-primary/60 sm:via-primary/10 sm:to-transparent">
           <div className="mx-auto w-full max-w-6xl px-5 pb-14">
