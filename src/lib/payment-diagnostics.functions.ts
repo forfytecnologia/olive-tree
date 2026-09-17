@@ -180,7 +180,7 @@ export const explainPaymentEvent = createServerFn({ method: "POST" })
       .from("payment_events")
       .select(
         "id,created_at,provider,event_type,level,message,payload,order_id,ai_explanation," +
-          "orders(order_number,payment_status,status,customer_name,total,payment_method,payment_reference)",
+          "orders(order_number,payment_status,fulfillment_status,customer_name,total,payment_method,payment_reference)",
       )
       .eq("id", data.eventId)
       .maybeSingle();
