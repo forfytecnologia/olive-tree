@@ -13,11 +13,20 @@ import {
   type PaymentMethod,
 } from "@/lib/payments";
 import { confirmMockPayment, getPublicOrder } from "@/lib/orders.functions";
-import { createGatewayCheckout } from "@/lib/payments.functions";
+import { confirmInfinitePayPayment, createGatewayCheckout } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/pedido/$id")({
-  validateSearch: (search: Record<string, unknown>): { status?: string } =>
-    typeof search["status"] === "string" ? { status: search["status"] as string } : {},
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { status?: string; transaction_nsu?: string; slug?: string } => {
+    const out: { status?: string; transaction_nsu?: string; slug?: string } = {};
+    if (typeof search["status"] === "string") out.status = search["status"];
+    if (typeof search["transaction_nsu"] === "string")
+      out.transaction_nsu = search["transaction_nsu"];
+    if (typeof search["slug"] === "string") out.slug = search["slug"];
+    return out;
+  },
+
   head: () => ({
     meta: [
       { title: "Pedido confirmado — Olive Tree Acessórios" },
