@@ -277,10 +277,12 @@ export const getPaymentConfig = createServerFn({ method: "POST" })
     const token = s?.mp_access_token ?? "";
     const origin = siteOrigin();
     return {
+      provider: ((s?.provider ?? "mercadopago") as PaymentProvider),
       hasToken: token.length > 0,
       tokenPreview: token ? `••••••••${token.slice(-6)}` : "",
       publicKey: s?.mp_public_key ?? "",
       hasWebhookSecret: (s?.mp_webhook_secret ?? "").length > 0,
+      infinitepayHandle: s?.infinitepay_handle ?? "",
       sandbox: s?.sandbox ?? false,
       enabled: s?.enabled ?? false,
       webhookUrl: origin ? `${origin}/api/public/mercadopago/webhook` : "",
@@ -288,12 +290,15 @@ export const getPaymentConfig = createServerFn({ method: "POST" })
   });
 
 const configSchema = z.object({
+  provider: z.enum(["mercadopago", "infinitepay"]),
   access_token: z.string().max(4000).optional(),
   public_key: z.string().max(400),
   webhook_secret: z.string().max(400).optional(),
+  infinitepay_handle: z.string().max(120),
   sandbox: z.boolean(),
   enabled: z.boolean(),
 });
+
 
 export const savePaymentConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
