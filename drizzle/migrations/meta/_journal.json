@@ -8,6 +8,13 @@
       "when": 1789653198824,
       "tag": "0000_payment_settings_provider_infinitepay",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789653653985,
+      "tag": "0001_payment_events_diagnostics",
+      "breakpoints": true
     }
   ]
 }

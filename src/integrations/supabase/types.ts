@@ -197,6 +197,53 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_events: {
+        Row: {
+          ai_explained_at: string | null
+          ai_explanation: string | null
+          created_at: string
+          event_type: string
+          id: string
+          level: string
+          message: string
+          order_id: string | null
+          payload: Json
+          provider: string
+        }
+        Insert: {
+          ai_explained_at?: string | null
+          ai_explanation?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          level?: string
+          message?: string
+          order_id?: string | null
+          payload?: Json
+          provider?: string
+        }
+        Update: {
+          ai_explained_at?: string | null
+          ai_explanation?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          level?: string
+          message?: string
+          order_id?: string | null
+          payload?: Json
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_settings: {
         Row: {
           enabled: boolean
