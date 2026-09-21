@@ -9,6 +9,39 @@ type ServerEntry = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
+type RuntimeEnv = Record<string, unknown>;
+
+function readRuntimeValue(env: RuntimeEnv, names: string[]): string | undefined {
+  for (const name of names) {
+    const runtimeValue = env[name];
+    if (typeof runtimeValue === "string" && runtimeValue.length > 0) return runtimeValue;
+
+    const processValue = process.env[name];
+    if (typeof processValue === "string" && processValue.length > 0) return processValue;
+  }
+  return undefined;
+}
+
+function normalizeDatabaseEnvironment(rawEnv: unknown) {
+  const env = rawEnv != null && typeof rawEnv === "object" ? (rawEnv as RuntimeEnv) : {};
+  const aliases = {
+    SUPABASE_URL: ["SUPABASE_URL", "VITE_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"],
+    SUPABASE_PUBLISHABLE_KEY: [
+      "SUPABASE_PUBLISHABLE_KEY",
+      "VITE_SUPABASE_PUBLISHABLE_KEY",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    ],
+    SUPABASE_SERVICE_ROLE_KEY: ["SUPABASE_SERVICE_ROLE_KEY"],
+  } as const;
+
+  for (const [canonicalName, acceptedNames] of Object.entries(aliases)) {
+    if (process.env[canonicalName]) continue;
+    const value = readRuntimeValue(env, [...acceptedNames]);
+    if (value) process.env[canonicalName] = value;
+  }
+}
+
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
@@ -47,6 +80,9 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Vercel and Worker deployments expose runtime variables differently.
+      // Normalize their common names before any server function is imported.
+      normalizeDatabaseEnvironment(env);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
