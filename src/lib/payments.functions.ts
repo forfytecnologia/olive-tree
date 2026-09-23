@@ -12,7 +12,7 @@ import { logPaymentEvent } from "@/lib/payment-events";
  */
 
 const MP_API = "https://api.mercadopago.com";
-const IP_API = "https://api.infinitepay.io";
+const IP_API = "https://api.checkout.infinitepay.io";
 
 export type PaymentProvider = "mercadopago" | "infinitepay";
 
@@ -169,7 +169,7 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
       };
 
       try {
-        const res = await fetch(`${IP_API}/invoices/public/checkout/links`, {
+        const res = await fetch(`${IP_API}/links`, {
           method: "POST",
           headers: { Accept: "application/json", "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -394,7 +394,7 @@ export const testPaymentConfig = createServerFn({ method: "POST" })
         return { ok: false, message: "Informe o seu usuário ($handle) da InfinitePay primeiro." };
       }
       try {
-        const res = await fetch(`${IP_API}/invoices/public/checkout/links`, {
+        const res = await fetch(`${IP_API}/links`, {
           method: "POST",
           headers: { Accept: "application/json", "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -479,7 +479,7 @@ export const confirmInfinitePayPayment = createServerFn({ method: "POST" })
       if (data.slug) params.set("slug", data.slug);
 
       const res = await fetch(
-        `${IP_API}/invoices/public/checkout/payment_check?${params.toString()}`,
+        `${IP_API}/payment_check?${params.toString()}`,
         { headers: { Accept: "application/json" } },
       );
       if (!res.ok) {
