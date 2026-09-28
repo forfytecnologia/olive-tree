@@ -15,6 +15,13 @@
       "when": 1789653653985,
       "tag": "0001_payment_events_diagnostics",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790633611997,
+      "tag": "0002_create_coupons",
+      "breakpoints": true
     }
   ]
 }
