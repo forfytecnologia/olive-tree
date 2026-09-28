@@ -244,7 +244,7 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
 
     if (discount > 0) {
       (preference["items"] as Array<Record<string, unknown>>).push({
-        title: "Desconto Pix (5%)",
+        title: "Descontos (cupom / Pix)",
         quantity: 1,
         unit_price: -discount,
         currency_id: "BRL",
