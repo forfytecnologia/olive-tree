@@ -10,6 +10,10 @@ import { MAX_INSTALLMENTS, installmentValue, pixDiscount } from "@/lib/pricing";
 import { createOrder } from "@/lib/orders";
 import { createPayment, PAYMENT_LABEL, type PaymentMethod } from "@/lib/payments";
 import { createGatewayCheckout } from "@/lib/payments.functions";
+import { validateCoupon } from "@/lib/coupons.functions";
+import { couponDiscount, describeCoupon, normalizeCode, type AppliedCoupon } from "@/lib/coupons";
+import { useServerFn } from "@tanstack/react-start";
+import { TicketPercent, X } from "lucide-react";
 import {
   isValidCep,
   lookupCep,
@@ -76,8 +80,42 @@ function CheckoutPage() {
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [submitting, setSubmitting] = useState(false);
 
-  const discount = method === "pix" ? pixDiscount(subtotal) : 0;
-  const total = subtotal - discount + (shipping?.price ?? 0);
+  const checkCoupon = useServerFn(validateCoupon);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponMsg, setCouponMsg] = useState("");
+  const [checking, setChecking] = useState(false);
+
+  const cDiscount = couponDiscount(subtotal, coupon);
+  const afterCoupon = Math.round((subtotal - cDiscount) * 100) / 100;
+  const shippingCost = coupon?.type === "free_shipping" ? 0 : (shipping?.price ?? 0);
+  const discount = method === "pix" ? pixDiscount(afterCoupon) : 0;
+  const total = afterCoupon - discount + shippingCost;
+
+  async function applyCoupon() {
+    const code = normalizeCode(couponInput);
+    if (!code) return;
+    setChecking(true);
+    setCouponMsg("");
+    try {
+      const r = await checkCoupon({
+        data: {
+          code,
+          email: customer.email,
+          items: items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+        },
+      });
+      if (r.ok) {
+        setCoupon(r.coupon);
+        setCouponInput("");
+        toast.success(`Cupom ${r.coupon.code} aplicado`);
+      } else setCouponMsg(r.message);
+    } catch {
+      setCouponMsg("Não foi possível conferir o cupom agora.");
+    } finally {
+      setChecking(false);
+    }
+  }
 
   if (items.length === 0) {
     return (
@@ -143,6 +181,7 @@ function CheckoutPage() {
         shipping,
         payment_method: method,
         items,
+        coupon_code: coupon?.code ?? "",
       });
 
       // Pagamento real (Mercado Pago) quando a loja tiver a chave configurada.
@@ -158,7 +197,12 @@ function CheckoutPage() {
       navigate({ to: "/pedido/$id", params: { id: order.id } });
     } catch (error) {
       console.error(error);
-      toast.error("Não foi possível concluir o pedido. Tente novamente.");
+      const msg = error instanceof Error && /cupom/i.test(error.message) ? error.message : "";
+      if (msg) {
+        setCoupon(null);
+        setCouponMsg(msg);
+        toast.error(msg);
+      } else toast.error("Não foi possível concluir o pedido. Tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -361,7 +405,7 @@ function CheckoutPage() {
                       {m === "cartao" && (
                         <span className="block text-xs text-muted-foreground">
                           Em até {MAX_INSTALLMENTS}x de{" "}
-                          {formatPrice(installmentValue(subtotal + (shipping?.price ?? 0)))} sem
+                          {formatPrice(installmentValue(afterCoupon + shippingCost))} sem
                           juros
                         </span>
                       )}
@@ -413,11 +457,68 @@ function CheckoutPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-6 space-y-2 border-t border-border pt-4 text-sm">
+            <div className="mt-6 border-t border-border pt-4">
+              {coupon ? (
+                <div className="flex items-center justify-between gap-3 border border-primary/40 bg-secondary px-3 py-2 text-sm">
+                  <span className="flex items-center gap-2">
+                    <TicketPercent className="h-4 w-4 text-primary" />
+                    <span>
+                      <strong className="tracking-wider">{coupon.code}</strong>
+                      <span className="block text-xs text-muted-foreground">
+                        {describeCoupon(coupon)}
+                      </span>
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCoupon(null)}
+                    aria-label="Remover cupom"
+                    className="p-1 opacity-60 hover:opacity-100"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="coupon" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Tem um cupom?
+                  </label>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      id="coupon"
+                      className="w-full border border-border bg-background px-3 py-2 text-sm uppercase tracking-wider outline-none focus:border-primary"
+                      placeholder="CÓDIGO"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(normalizeCode(e.target.value));
+                        setCouponMsg("");
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCoupon}
+                      disabled={checking || !couponInput}
+                      className="border border-primary px-4 text-xs uppercase tracking-[0.2em] text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
+                    >
+                      {checking ? "…" : "Aplicar"}
+                    </button>
+                  </div>
+                  {couponMsg && <p className="mt-2 text-xs text-destructive">{couponMsg}</p>}
+                </div>
+              )}
+            </div>
+            <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
+              {coupon && cDiscount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cupom {coupon.code}</span>
+                  <span>- {formatPrice(cDiscount)}</span>
+                </div>
+              )}
               {discount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Desconto Pix (5%)</span>
@@ -428,7 +529,7 @@ function CheckoutPage() {
                 <span className="text-muted-foreground">Frete</span>
                 <span>
                   {shipping
-                    ? shipping.price === 0
+                    ? shippingCost === 0
                       ? "Grátis"
                       : formatPrice(shipping.price)
                     : "a calcular"}
@@ -440,7 +541,7 @@ function CheckoutPage() {
               </div>
               <p className="pt-1 text-xs text-muted-foreground">
                 No Pix são 5% de desconto. No cartão, até {MAX_INSTALLMENTS}x de{" "}
-                {formatPrice(installmentValue(subtotal + (shipping?.price ?? 0)))} sem juros.
+                {formatPrice(installmentValue(afterCoupon + shippingCost))} sem juros.
               </p>
             </div>
           </aside>
