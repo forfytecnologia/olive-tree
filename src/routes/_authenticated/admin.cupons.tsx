@@ -41,7 +41,7 @@ const STATUS_CLASS: Record<CouponStatus, string> = {
 };
 
 type Form = {
-  id?: string;
+  id?: string | undefined;
   code: string;
   type: CouponType;
   value: string;
@@ -133,16 +133,16 @@ function CuponsAdmin() {
     });
   }
 
-  async function save() {
+  async function save(): Promise<void> {
     if (!form) return;
     const code = normalizeCode(form.code);
     const value = Number(form.value.replace(",", "."));
-    if (code.length < 3) return toast.error("O código precisa ter pelo menos 3 letras ou números.");
+    if (code.length < 3) { toast.error("O código precisa ter pelo menos 3 letras ou números."); return; }
     if (form.type !== "free_shipping" && !(value > 0))
-      return toast.error("Informe o valor do desconto.");
-    if (form.type === "percent" && value > 100) return toast.error("A porcentagem vai até 100%.");
+      { toast.error("Informe o valor do desconto."); return; }
+    if (form.type === "percent" && value > 100) { toast.error("A porcentagem vai até 100%."); return; }
     if (form.starts_at && form.ends_at && form.ends_at < form.starts_at)
-      return toast.error("A data final precisa ser depois da data de início.");
+      { toast.error("A data final precisa ser depois da data de início."); return; }
     const num = (v: string) => (v.trim() ? Math.max(0, Math.floor(Number(v))) : null);
     const payload = {
       code,
@@ -171,14 +171,14 @@ function CuponsAdmin() {
     refresh();
   }
 
-  async function toggle(c: Coupon) {
+  async function toggle(c: Coupon): Promise<void> {
     const { error } = await supabase.from("coupons").update({ active: !c.active }).eq("id", c.id);
-    if (error) return toast.error("Não foi possível alterar.");
+    if (error) { toast.error("Não foi possível alterar."); return; }
     toast.success(c.active ? "Cupom pausado" : "Cupom ativado");
     refresh();
   }
 
-  async function remove(c: Coupon) {
+  async function remove(c: Coupon): Promise<void> {
     if (c.uses_count > 0) {
       if (!confirm(`O cupom ${c.code} já foi usado. Para manter o histórico, ele será pausado. Continuar?`)) return;
       await supabase.from("coupons").update({ active: false }).eq("id", c.id);
@@ -186,7 +186,7 @@ function CuponsAdmin() {
     } else {
       if (!confirm(`Excluir o cupom ${c.code}?`)) return;
       const { error } = await supabase.from("coupons").delete().eq("id", c.id);
-      if (error) return toast.error("Não foi possível excluir.");
+      if (error) { toast.error("Não foi possível excluir."); return; }
       toast.success("Cupom excluído");
     }
     refresh();
