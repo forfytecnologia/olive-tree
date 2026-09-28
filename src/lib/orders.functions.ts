@@ -24,6 +24,8 @@ export type OrderView = {
   shipping_price: number;
   subtotal: number;
   total: number;
+  coupon_code: string;
+  discount_amount: number;
   payment_method: string;
   payment_status: string;
   payment_link: string;
@@ -50,7 +52,7 @@ export const getPublicOrder = createServerFn({ method: "POST" })
       .from("orders")
       .select(
         "id,order_number,customer_email,zip,street,number,complement,district,city,state," +
-          "shipping_carrier,shipping_service,shipping_days,shipping_price,subtotal,total," +
+          "shipping_carrier,shipping_service,shipping_days,shipping_price,subtotal,total,coupon_code,discount_amount," +
           "payment_method,payment_status,payment_link,fulfillment_status,tracking_code,created_at," +
           "order_items(id,product_name,product_slug,image_url,size,color,quantity,unit_price)",
       )
@@ -66,6 +68,7 @@ export const getPublicOrder = createServerFn({ method: "POST" })
       shipping_price: Number(order["shipping_price"] ?? 0),
       subtotal: Number(order["subtotal"] ?? 0),
       total: Number(order["total"] ?? 0),
+      discount_amount: Number(order["discount_amount"] ?? 0),
       order_items: (order.order_items ?? []).map((i) => ({
         ...i,
         unit_price: Number(i.unit_price),

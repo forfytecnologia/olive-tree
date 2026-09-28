@@ -43,6 +43,8 @@ export type Order = {
   fulfillment_status: string;
   tracking_code: string;
   notes: string;
+  coupon_code?: string;
+  discount_amount?: number;
   created_at: string;
   order_items?: OrderItem[];
 };
@@ -62,6 +64,7 @@ export type CheckoutInput = {
   payment_method: PaymentMethod;
   items: CartItem[];
   notes?: string;
+  coupon_code?: string;
 };
 
 function numeric(row: Record<string, unknown>) {
@@ -101,6 +104,7 @@ export async function createOrder(input: CheckoutInput): Promise<Order> {
       },
       payment_method: input.payment_method,
       notes: input.notes ?? "",
+      coupon_code: input.coupon_code ?? "",
       items: input.items.map((i) => ({
         product_id: i.product_id,
         size: i.size,
