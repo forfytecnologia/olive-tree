@@ -240,11 +240,17 @@ function PedidoPage() {
             <span className="text-muted-foreground">Subtotal</span>
             <span>{formatPrice(order.subtotal)}</span>
           </div>
-          {order.subtotal + order.shipping_price - order.total > 0.001 && (
+          {order.discount_amount > 0 && (
+            <div className="mt-2 flex justify-between">
+              <span className="text-muted-foreground">Cupom {order.coupon_code}</span>
+              <span>- {formatPrice(order.discount_amount)}</span>
+            </div>
+          )}
+          {order.subtotal - order.discount_amount + order.shipping_price - order.total > 0.001 && (
             <div className="mt-2 flex justify-between">
               <span className="text-muted-foreground">Desconto Pix (5%)</span>
               <span>
-                - {formatPrice(order.subtotal + order.shipping_price - order.total)}
+                - {formatPrice(order.subtotal - order.discount_amount + order.shipping_price - order.total)}
               </span>
             </div>
           )}

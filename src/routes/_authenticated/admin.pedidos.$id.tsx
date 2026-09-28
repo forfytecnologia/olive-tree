@@ -105,6 +105,12 @@ function OrderDetail() {
               <span>{formatPrice(i.unit_price * i.quantity)}</span>
             </div>
           ))}
+          {order.coupon_code && (
+            <div className="flex justify-between pt-2">
+              <span className="text-muted-foreground">Cupom usado: {order.coupon_code}</span>
+              <span>- {formatPrice(Number(order.discount_amount ?? 0))}</span>
+            </div>
+          )}
           <div className="flex justify-between pt-2 text-base">
             <span>Total</span>
             <span>{formatPrice(order.total)}</span>

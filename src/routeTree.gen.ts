@@ -22,6 +22,7 @@ import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
 import { Route as AuthenticatedAdminConfigRouteImport } from './routes/_authenticated/admin.config'
+import { Route as AuthenticatedAdminCuponsRouteImport } from './routes/_authenticated/admin.cupons'
 import { Route as AuthenticatedAdminDiagnosticoRouteImport } from './routes/_authenticated/admin.diagnostico'
 import { Route as AuthenticatedAdminEnvioRouteImport } from './routes/_authenticated/admin.envio'
 import { Route as AuthenticatedAdminPagamentoRouteImport } from './routes/_authenticated/admin.pagamento'
@@ -97,6 +98,12 @@ const AuthenticatedAdminConfigRoute =
     path: '/config',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCuponsRoute =
+  AuthenticatedAdminCuponsRouteImport.update({
+    id: '/cupons',
+    path: '/cupons',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminDiagnosticoRoute =
   AuthenticatedAdminDiagnosticoRouteImport.update({
     id: '/diagnostico',
@@ -157,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/config': typeof AuthenticatedAdminConfigRoute
+  '/admin/cupons': typeof AuthenticatedAdminCuponsRoute
   '/admin/diagnostico': typeof AuthenticatedAdminDiagnosticoRoute
   '/admin/envio': typeof AuthenticatedAdminEnvioRoute
   '/admin/pagamento': typeof AuthenticatedAdminPagamentoRoute
@@ -178,6 +186,7 @@ export interface FileRoutesByTo {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/config': typeof AuthenticatedAdminConfigRoute
+  '/admin/cupons': typeof AuthenticatedAdminCuponsRoute
   '/admin/diagnostico': typeof AuthenticatedAdminDiagnosticoRoute
   '/admin/envio': typeof AuthenticatedAdminEnvioRoute
   '/admin/pagamento': typeof AuthenticatedAdminPagamentoRoute
@@ -202,6 +211,7 @@ export interface FileRoutesById {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/_authenticated/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/_authenticated/admin/config': typeof AuthenticatedAdminConfigRoute
+  '/_authenticated/admin/cupons': typeof AuthenticatedAdminCuponsRoute
   '/_authenticated/admin/diagnostico': typeof AuthenticatedAdminDiagnosticoRoute
   '/_authenticated/admin/envio': typeof AuthenticatedAdminEnvioRoute
   '/_authenticated/admin/pagamento': typeof AuthenticatedAdminPagamentoRoute
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/admin/categorias'
     | '/admin/config'
+    | '/admin/cupons'
     | '/admin/diagnostico'
     | '/admin/envio'
     | '/admin/pagamento'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/admin/categorias'
     | '/admin/config'
+    | '/admin/cupons'
     | '/admin/diagnostico'
     | '/admin/envio'
     | '/admin/pagamento'
@@ -270,6 +282,7 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/_authenticated/admin/categorias'
     | '/_authenticated/admin/config'
+    | '/_authenticated/admin/cupons'
     | '/_authenticated/admin/diagnostico'
     | '/_authenticated/admin/envio'
     | '/_authenticated/admin/pagamento'
@@ -387,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminConfigRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/cupons': {
+      id: '/_authenticated/admin/cupons'
+      path: '/cupons'
+      fullPath: '/admin/cupons'
+      preLoaderRoute: typeof AuthenticatedAdminCuponsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/diagnostico': {
       id: '/_authenticated/admin/diagnostico'
       path: '/diagnostico'
@@ -449,6 +469,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCategoriasRoute: typeof AuthenticatedAdminCategoriasRoute
   AuthenticatedAdminConfigRoute: typeof AuthenticatedAdminConfigRoute
+  AuthenticatedAdminCuponsRoute: typeof AuthenticatedAdminCuponsRoute
   AuthenticatedAdminDiagnosticoRoute: typeof AuthenticatedAdminDiagnosticoRoute
   AuthenticatedAdminEnvioRoute: typeof AuthenticatedAdminEnvioRoute
   AuthenticatedAdminPagamentoRoute: typeof AuthenticatedAdminPagamentoRoute
@@ -462,6 +483,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCategoriasRoute: AuthenticatedAdminCategoriasRoute,
   AuthenticatedAdminConfigRoute: AuthenticatedAdminConfigRoute,
+  AuthenticatedAdminCuponsRoute: AuthenticatedAdminCuponsRoute,
   AuthenticatedAdminDiagnosticoRoute: AuthenticatedAdminDiagnosticoRoute,
   AuthenticatedAdminEnvioRoute: AuthenticatedAdminEnvioRoute,
   AuthenticatedAdminPagamentoRoute: AuthenticatedAdminPagamentoRoute,

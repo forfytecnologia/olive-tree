@@ -35,6 +35,7 @@ const schema = z.object({
   }),
   payment_method: z.enum(["pix", "cartao", "boleto"]),
   notes: z.string().max(1000).default(""),
+  coupon_code: z.string().max(40).default(""),
   items: z
     .array(
       z.object({
@@ -104,8 +105,29 @@ export const createOrderOnServer = createServerFn({ method: "POST" })
 
     const subtotal =
       Math.round(items.reduce((s, i) => s + i.unit_price * i.quantity, 0) * 100) / 100;
-    const discount = data.payment_method === "pix" ? pixDiscount(subtotal) : 0;
-    const total = Math.round((subtotal - discount + data.shipping.price) * 100) / 100;
+
+    let couponCode = "";
+    let couponDisc = 0;
+    let couponId: string | null = null;
+    let shippingPrice = data.shipping.price;
+    if (data.coupon_code.trim()) {
+      const { checkCoupon } = await import("@/lib/coupons.server");
+      const r = await checkCoupon(data.coupon_code, subtotal, data.customer.email);
+      if (!r.ok) throw new Error(r.message);
+      couponCode = r.coupon.code;
+      couponDisc = r.discount;
+      couponId = r.coupon.id;
+      if (r.coupon.type === "free_shipping") shippingPrice = 0;
+    }
+
+    const afterCoupon = Math.round((subtotal - couponDisc) * 100) / 100;
+    const discount = data.payment_method === "pix" ? pixDiscount(afterCoupon) : 0;
+    const total = Math.round((afterCoupon - discount + shippingPrice) * 100) / 100;
+
+    if (couponId) {
+      const { data: okUse } = await supabaseAdmin.rpc("use_coupon", { _id: couponId });
+      if (!okUse) throw new Error("Este cupom acabou de atingir o limite de usos.");
+    }
 
     const { data: order, error } = await supabaseAdmin
       .from("orders")
@@ -124,9 +146,11 @@ export const createOrderOnServer = createServerFn({ method: "POST" })
         shipping_service: data.shipping.service,
         shipping_carrier: data.shipping.carrier,
         shipping_days: data.shipping.days,
-        shipping_price: data.shipping.price,
+        shipping_price: shippingPrice,
         subtotal,
         total,
+        coupon_code: couponCode,
+        discount_amount: couponDisc,
         payment_method: data.payment_method,
         notes: data.notes,
       })

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchProducts, formatPrice, stockTotal } from "@/lib/catalog";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: Dashboard,
@@ -20,6 +21,19 @@ function Dashboard() {
   const { data: products = [] } = useQuery({
     queryKey: ["admin-products"],
     queryFn: () => fetchProducts({ includeDrafts: true }),
+  });
+
+  const { data: topCoupons = [] } = useQuery({
+    queryKey: ["admin-top-coupons"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("coupons")
+        .select("id,code,uses_count")
+        .gt("uses_count", 0)
+        .order("uses_count", { ascending: false })
+        .limit(5);
+      return data ?? [];
+    },
   });
 
   const ativos = products.filter((p) => p.status === "ativo");
@@ -70,6 +84,23 @@ function Dashboard() {
                 <span className="text-muted-foreground">
                   {p.views} · {formatPrice(p.price)}
                 </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="bg-card p-6">
+          <p className="eyebrow">Cupons mais usados</p>
+          <ul className="mt-4 space-y-3 text-sm">
+            {topCoupons.length === 0 && (
+              <li className="text-muted-foreground">
+                Nenhum cupom usado ainda.{" "}
+                <Link to="/admin/cupons" className="underline underline-offset-4">Criar cupom</Link>
+              </li>
+            )}
+            {topCoupons.map((c) => (
+              <li key={c.id} className="flex justify-between">
+                <span className="font-mono tracking-wider">{c.code}</span>
+                <span className="text-muted-foreground">{c.uses_count} uso(s)</span>
               </li>
             ))}
           </ul>

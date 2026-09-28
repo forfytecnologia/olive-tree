@@ -44,6 +44,54 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          ends_at: string | null
+          id: string
+          max_uses: number | null
+          max_uses_per_email: number | null
+          min_subtotal: number
+          starts_at: string | null
+          type: string
+          updated_at: string
+          uses_count: number
+          value: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          max_uses?: number | null
+          max_uses_per_email?: number | null
+          min_subtotal?: number
+          starts_at?: string | null
+          type?: string
+          updated_at?: string
+          uses_count?: number
+          value?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          max_uses?: number | null
+          max_uses_per_email?: number | null
+          min_subtotal?: number
+          starts_at?: string | null
+          type?: string
+          updated_at?: string
+          uses_count?: number
+          value?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           color: string
@@ -105,11 +153,13 @@ export type Database = {
         Row: {
           city: string
           complement: string
+          coupon_code: string
           created_at: string
           customer_document: string
           customer_email: string
           customer_name: string
           customer_phone: string
+          discount_amount: number
           district: string
           fulfillment_status: string
           id: string
@@ -136,11 +186,13 @@ export type Database = {
         Insert: {
           city: string
           complement?: string
+          coupon_code?: string
           created_at?: string
           customer_document?: string
           customer_email: string
           customer_name: string
           customer_phone: string
+          discount_amount?: number
           district?: string
           fulfillment_status?: string
           id?: string
@@ -167,11 +219,13 @@ export type Database = {
         Update: {
           city?: string
           complement?: string
+          coupon_code?: string
           created_at?: string
           customer_document?: string
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          discount_amount?: number
           district?: string
           fulfillment_status?: string
           id?: string
@@ -515,6 +569,7 @@ export type Database = {
         Returns: boolean
       }
       increment_product_views: { Args: { _slug: string }; Returns: undefined }
+      use_coupon: { Args: { _id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
