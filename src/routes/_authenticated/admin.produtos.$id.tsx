@@ -18,6 +18,32 @@ export const Route = createFileRoute("/_authenticated/admin/produtos/$id")({
 
 const DEFAULT_SIZES = ["Único"];
 
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/avif": "avif",
+};
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+function uploadErrorMessage(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  if (/bucket not found/i.test(message)) {
+    return "O armazenamento de fotos (bucket product-images) não existe no Supabase. Rode o script de configuração do banco.";
+  }
+  if (/row-level security|unauthorized|403/i.test(message)) {
+    return "Sem permissão para enviar fotos. Confirme que este usuário é administrador.";
+  }
+  if (/mime type|not supported/i.test(message)) {
+    return "Formato de imagem não aceito. Use JPG, PNG ou WEBP.";
+  }
+  if (/exceeded the maximum allowed size|payload too large/i.test(message)) {
+    return "Foto muito grande. O limite é 10 MB.";
+  }
+  return message || "Falha no upload.";
+}
+
 type SizeRow = { size: string; stock: number };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -77,23 +103,36 @@ function ProdutoForm() {
     setImages(product.product_images.map((i) => ({ id: i.id, url: i.url })));
   }, [product]);
 
-  async function onUpload(files: FileList | null) {
-    if (!files?.length) return;
+  async function onUpload(input: HTMLInputElement) {
+    const files = Array.from(input.files ?? []);
+    if (!files.length) return;
     setUploading(true);
+    const uploaded: { url: string }[] = [];
     try {
-      const uploaded: { url: string }[] = [];
-      for (const file of Array.from(files)) {
-        const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      for (const file of files) {
+        const ext = IMAGE_EXTENSIONS[file.type];
+        if (!ext) {
+          throw new Error(
+            `"${file.name}" não é JPG, PNG ou WEBP. Fotos HEIC do iPhone precisam ser exportadas como JPG.`,
+          );
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+          throw new Error(`"${file.name}" tem mais de 10 MB.`);
+        }
         const path = `${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("product-images").upload(path, file);
+        const { error } = await supabase.storage
+          .from("product-images")
+          .upload(path, file, { contentType: file.type, cacheControl: "31536000" });
         if (error) throw error;
         uploaded.push({ url: path });
       }
-      setImages((prev) => [...prev, ...uploaded]);
-      toast.success("Foto(s) enviada(s).");
+      toast.success(uploaded.length > 1 ? "Fotos enviadas." : "Foto enviada.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha no upload.");
+      toast.error(uploadErrorMessage(err), { duration: 10000 });
     } finally {
+      // Keep whatever made it before a failure, and clear the picker so the same file can be retried.
+      if (uploaded.length) setImages((prev) => [...prev, ...uploaded]);
+      input.value = "";
       setUploading(false);
     }
   }
@@ -102,6 +141,10 @@ function ProdutoForm() {
     e.preventDefault();
     if (!name.trim()) {
       toast.error("Informe o nome do produto.");
+      return;
+    }
+    if (uploading) {
+      toast.error("Aguarde o envio das fotos terminar.");
       return;
     }
     setSaving(true);
@@ -136,7 +179,11 @@ function ProdutoForm() {
       }
       if (!productId) throw new Error("Produto não criado.");
 
-      await supabase.from("product_variants").delete().eq("product_id", productId);
+      const { error: variantsDeleteError } = await supabase
+        .from("product_variants")
+        .delete()
+        .eq("product_id", productId);
+      if (variantsDeleteError) throw variantsDeleteError;
       const variants = sizes
         .filter((s) => s.size.trim())
         .map((s) => ({
@@ -149,7 +196,11 @@ function ProdutoForm() {
         if (error) throw error;
       }
 
-      await supabase.from("product_images").delete().eq("product_id", productId);
+      const { error: imagesDeleteError } = await supabase
+        .from("product_images")
+        .delete()
+        .eq("product_id", productId);
+      if (imagesDeleteError) throw imagesDeleteError;
       if (images.length) {
         const { error } = await supabase.from("product_images").insert(
           images.map((img, index) => ({
@@ -322,19 +373,24 @@ function ProdutoForm() {
           accept="image/*"
           multiple
           disabled={uploading}
-          onChange={(e) => onUpload(e.target.files)}
+          onChange={(e) => onUpload(e.currentTarget)}
           className="mt-4 block text-sm"
         />
         {uploading && <p className="mt-2 text-xs text-muted-foreground">Enviando…</p>}
+        {!uploading && images.length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Sem foto, o catálogo mostra a imagem padrão da marca.
+          </p>
+        )}
       </div>
 
       <div className="flex gap-4">
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || uploading}
           className="bg-primary px-8 py-3 text-xs uppercase tracking-[0.25em] text-primary-foreground disabled:opacity-60"
         >
-          {saving ? "Salvando…" : "Salvar"}
+          {saving ? "Salvando…" : uploading ? "Enviando fotos…" : "Salvar"}
         </button>
         <button
           type="button"

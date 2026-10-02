@@ -104,7 +104,7 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
       .from("orders")
       .select(
         "id,order_number,customer_name,customer_email,customer_phone,subtotal,total," +
-          "shipping_price,payment_status,payment_link," +
+          "shipping_price,payment_method,payment_status,payment_link," +
           "order_items(product_name,quantity,unit_price)",
       )
       .eq("id", data.orderId)
@@ -119,6 +119,7 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
           subtotal: number | string;
           total: number | string;
           shipping_price: number | string;
+          payment_method: string;
           payment_status: string;
           payment_link: string | null;
           order_items?: Array<{
@@ -238,6 +239,14 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
       payment_methods: {
         installments: 2,
         default_installments: 1,
+        // O total já tem os 5% do Pix: sem isso a cliente pagaria no cartão com o desconto.
+        ...(order.payment_method === "pix"
+          ? {
+              excluded_payment_types: ["credit_card", "debit_card", "prepaid_card", "ticket", "atm"].map(
+                (id) => ({ id }),
+              ),
+            }
+          : {}),
       },
       metadata: { order_number: order.order_number },
     };
@@ -321,6 +330,12 @@ export const createGatewayCheckout = createServerFn({ method: "POST" })
       return { url: null, error: "Pagamento online indisponível no momento." };
     }
   });
+
+/** Diz ao checkout se a loja cobra de verdade ou ainda está no modo simulado. */
+export const getPaymentMode = createServerFn({ method: "POST" }).handler(async () => {
+  const { onlinePaymentReady } = await import("./payments.server");
+  return { online: await onlinePaymentReady() };
+});
 
 export const getPaymentConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -494,8 +509,9 @@ export const confirmInfinitePayPayment = createServerFn({ method: "POST" })
         });
         return { paid: false };
       }
-      const json = (await res.json()) as { success?: boolean; paid?: boolean };
-      const paid = json.paid === true || json.success === true;
+      // `success` só diz que a consulta funcionou; quem diz se foi pago é `paid`.
+      const json = (await res.json()) as { success?: boolean; paid?: boolean; amount?: number };
+      const paid = json.success === true && json.paid === true;
       if (!paid) {
         await logPaymentEvent({
           orderId: data.orderId,
@@ -510,6 +526,25 @@ export const confirmInfinitePayPayment = createServerFn({ method: "POST" })
       }
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: order } = await supabaseAdmin
+        .from("orders")
+        .select("total")
+        .eq("id", data.orderId)
+        .maybeSingle();
+      const expected = Math.round(Number(order?.total ?? 0) * 100);
+      if (!order || (typeof json.amount === "number" && json.amount < expected)) {
+        await logPaymentEvent({
+          orderId: data.orderId,
+          provider: "infinitepay",
+          eventType: "valor_pago_diferente",
+          level: "erro",
+          message:
+            "A InfinitePay confirmou um pagamento com valor menor que o total do pedido. O pedido continua aguardando.",
+          payload: { resposta: json, transacao: data.transactionNsu, esperado_centavos: expected },
+        });
+        return { paid: false };
+      }
+
       await supabaseAdmin
         .from("orders")
         .update({
@@ -517,7 +552,8 @@ export const confirmInfinitePayPayment = createServerFn({ method: "POST" })
           payment_provider: "infinitepay",
           payment_reference: data.transactionNsu,
         })
-        .eq("id", data.orderId);
+        .eq("id", data.orderId)
+        .eq("payment_status", "aguardando");
 
       return { paid: true };
     } catch (err) {

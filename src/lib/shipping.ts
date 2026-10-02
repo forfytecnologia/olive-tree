@@ -84,22 +84,38 @@ export async function quoteShipping(
   const merchandise = items.reduce((s, i) => s + i.price * i.quantity, 0);
 
   // 1) Melhor Envio (quando a loja tiver token configurado no painel)
+  let live: ShippingOption[] = [];
   try {
-    const live = await quoteShippingLive({
+    const res = await quoteShippingLive({
       data: {
         zip: onlyDigits(cep),
         units: Math.min(50, Math.max(1, units)),
         merchandise: Math.min(100000, Math.round(merchandise * 100) / 100),
       },
     });
-    if (live.options.length) {
-      return applyFreeShipping(
-        live.options.slice(0, 6).map((o) => ({ ...o })),
-        merchandise,
-      );
-    }
+    live = res.options;
   } catch {
     // segue para a estimativa local
+  }
+  return shippingOptions(cep, units, merchandise, live);
+}
+
+/**
+ * Opções de entrega a partir da cotação do Melhor Envio (ou da estimativa local
+ * quando ela vem vazia). O servidor usa esta mesma regra para conferir o frete
+ * escolhido no pedido.
+ */
+export function shippingOptions(
+  cep: string,
+  units: number,
+  merchandise: number,
+  live: ShippingOption[],
+): ShippingOption[] {
+  if (live.length) {
+    return applyFreeShipping(
+      live.slice(0, 6).map((o) => ({ ...o })),
+      merchandise,
+    );
   }
 
   // 2) Estimativa local (usada enquanto a integração estiver desligada)

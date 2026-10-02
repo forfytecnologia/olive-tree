@@ -32,6 +32,8 @@ export type OrderView = {
   fulfillment_status: string;
   tracking_code: string;
   created_at: string;
+  /** Loja cobrando de verdade (Mercado Pago / InfinitePay); falso no modo simulado. */
+  online_payment: boolean;
   order_items: Array<{
     id: string;
     product_name: string;
@@ -60,6 +62,8 @@ export const getPublicOrder = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error("Não foi possível carregar o pedido.");
     if (!row) return null;
+    const { onlinePaymentReady } = await import("./payments.server");
+    const online_payment = await onlinePaymentReady();
     const order = row as unknown as Record<string, unknown> & {
       order_items?: Array<Record<string, unknown> & { unit_price: number | string }>;
     };
@@ -69,6 +73,7 @@ export const getPublicOrder = createServerFn({ method: "POST" })
       subtotal: Number(order["subtotal"] ?? 0),
       total: Number(order["total"] ?? 0),
       discount_amount: Number(order["discount_amount"] ?? 0),
+      online_payment,
       order_items: (order.order_items ?? []).map((i) => ({
         ...i,
         unit_price: Number(i.unit_price),
@@ -76,10 +81,17 @@ export const getPublicOrder = createServerFn({ method: "POST" })
     } as OrderView;
   });
 
-/** Confirmação de pagamento simulada — substituir pelo webhook do gateway. */
+/**
+ * Confirmação de pagamento simulada. Só vale enquanto a loja está no modo
+ * simulado: com o gateway ligado, quem marca o pedido como pago é o gateway.
+ */
 export const confirmMockPayment = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => idSchema.extend({ reference: z.string().max(64) }).parse(data))
   .handler(async ({ data }) => {
+    const { onlinePaymentReady } = await import("./payments.server");
+    if (await onlinePaymentReady()) {
+      throw new Error("A loja já recebe pagamentos de verdade; a simulação está desligada.");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("orders")

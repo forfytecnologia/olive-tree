@@ -55,7 +55,8 @@ function ProdutoPage() {
 
   useEffect(() => {
     if (!slug) return;
-    supabase.rpc("increment_product_views", { _slug: slug });
+    // O cliente do Supabase só envia a chamada quando o resultado é consumido.
+    supabase.rpc("increment_product_views", { _slug: slug }).then(() => undefined);
   }, [slug]);
 
   if (isLoading) {

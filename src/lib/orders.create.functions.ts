@@ -7,8 +7,8 @@ import { pixDiscount } from "@/lib/pricing";
  *
  * O navegador pode inserir pedidos, mas não pode lê-los de volta (as regras de
  * acesso liberam a leitura só para o painel). Por isso o pedido é criado aqui,
- * com os preços conferidos direto no banco — o valor nunca depende do que vem
- * da tela.
+ * com preços, estoque e frete conferidos no servidor — o valor nunca depende do
+ * que vem da tela.
  */
 
 const schema = z.object({
@@ -28,9 +28,8 @@ const schema = z.object({
     state: z.string().min(2).max(2),
   }),
   shipping: z.object({
-    service: z.string().max(80),
-    carrier: z.string().max(80),
-    days: z.number().int().min(0).max(90),
+    id: z.string().max(40),
+    // Valor que a cliente viu; se a cotação do servidor der outro, pedimos para recalcular.
     price: z.number().min(0).max(10000),
   }),
   payment_method: z.enum(["pix", "cartao", "boleto"]),
@@ -66,21 +65,44 @@ export const createOrderOnServer = createServerFn({ method: "POST" })
     const ids = [...new Set(data.items.map((i) => i.product_id))];
     const { data: products, error: productsError } = await supabaseAdmin
       .from("products")
-      .select("id,name,slug,price,status")
+      .select("id,name,slug,price,status,product_variants(size,stock)")
       .in("id", ids);
     if (productsError) throw new Error("Não foi possível confirmar os produtos.");
 
     const byId = new Map(
       (products ?? []).map((p) => [
         p.id as string,
-        p as unknown as { id: string; name: string; slug: string; price: number | string; status: string },
+        p as unknown as {
+          id: string;
+          name: string;
+          slug: string;
+          price: number | string;
+          status: string;
+          product_variants: Array<{ size: string; stock: number }>;
+        },
       ]),
     );
 
+    // Mesmo tamanho em cores diferentes vira linhas separadas na sacola.
+    const wanted = new Map<string, number>();
+    for (const i of data.items) {
+      const key = `${i.product_id}|${i.size}`;
+      wanted.set(key, (wanted.get(key) ?? 0) + i.quantity);
+    }
+
     const items = data.items.map((i) => {
       const product = byId.get(i.product_id);
-      if (!product || !["ativo", "esgotado"].includes(product.status)) {
+      if (!product || product.status === "rascunho") {
         throw new Error("Um dos itens da sacola não está mais disponível.");
+      }
+      if (product.status !== "ativo") throw new Error(`"${product.name}" esgotou.`);
+      if (product.product_variants.length) {
+        const variant = product.product_variants.find((v) => v.size === i.size);
+        const stock = variant?.stock ?? 0;
+        if (stock <= 0) throw new Error(`"${product.name}" esgotou no tamanho ${i.size || "escolhido"}.`);
+        if (stock < (wanted.get(`${i.product_id}|${i.size}`) ?? 0)) {
+          throw new Error(`Só temos ${stock} unidade(s) de "${product.name}" disponíveis.`);
+        }
       }
       return {
         product_id: product.id,
@@ -106,10 +128,26 @@ export const createOrderOnServer = createServerFn({ method: "POST" })
     const subtotal =
       Math.round(items.reduce((s, i) => s + i.unit_price * i.quantity, 0) * 100) / 100;
 
+    // Frete refeito aqui com a mesma regra do checkout, usando os preços do banco.
+    const { shippingOptions } = await import("@/lib/shipping");
+    const { liveShippingQuotes } = await import("@/lib/shipping.functions");
+    const units = data.items.reduce((s, i) => s + i.quantity, 0);
+    const live = await liveShippingQuotes(
+      data.address.zip.replace(/\D/g, ""),
+      Math.min(50, Math.max(1, units)),
+      Math.min(100000, subtotal),
+    );
+    const shipping = shippingOptions(data.address.zip, units, subtotal, live.options).find(
+      (o) => o.id === data.shipping.id,
+    );
+    if (!shipping || Math.abs(shipping.price - data.shipping.price) > 0.01) {
+      throw new Error("O valor do frete mudou. Escolha a entrega de novo.");
+    }
+
     let couponCode = "";
     let couponDisc = 0;
     let couponId: string | null = null;
-    let shippingPrice = data.shipping.price;
+    let shippingPrice = shipping.price;
     if (data.coupon_code.trim()) {
       const { checkCoupon } = await import("@/lib/coupons.server");
       const r = await checkCoupon(data.coupon_code, subtotal, data.customer.email);
@@ -123,11 +161,6 @@ export const createOrderOnServer = createServerFn({ method: "POST" })
     const afterCoupon = Math.round((subtotal - couponDisc) * 100) / 100;
     const discount = data.payment_method === "pix" ? pixDiscount(afterCoupon) : 0;
     const total = Math.round((afterCoupon - discount + shippingPrice) * 100) / 100;
-
-    if (couponId) {
-      const { data: okUse } = await supabaseAdmin.rpc("use_coupon", { _id: couponId });
-      if (!okUse) throw new Error("Este cupom acabou de atingir o limite de usos.");
-    }
 
     const { data: order, error } = await supabaseAdmin
       .from("orders")
@@ -143,9 +176,9 @@ export const createOrderOnServer = createServerFn({ method: "POST" })
         district: data.address.district,
         city: data.address.city,
         state: data.address.state,
-        shipping_service: data.shipping.service,
-        shipping_carrier: data.shipping.carrier,
-        shipping_days: data.shipping.days,
+        shipping_service: shipping.service,
+        shipping_carrier: shipping.carrier,
+        shipping_days: shipping.days,
         shipping_price: shippingPrice,
         subtotal,
         total,
@@ -175,6 +208,15 @@ export const createOrderOnServer = createServerFn({ method: "POST" })
     if (itemsError) {
       await supabaseAdmin.from("orders").delete().eq("id", order.id as string);
       throw new Error("Não foi possível registrar os itens do pedido.");
+    }
+
+    // O uso do cupom só conta depois que o pedido existe de fato.
+    if (couponId) {
+      const { data: okUse } = await supabaseAdmin.rpc("use_coupon", { _id: couponId });
+      if (!okUse) {
+        await supabaseAdmin.from("orders").delete().eq("id", order.id as string);
+        throw new Error("Este cupom acabou de atingir o limite de usos.");
+      }
     }
 
     return {

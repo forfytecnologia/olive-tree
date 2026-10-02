@@ -42,10 +42,18 @@ function verifySignature(
   return safeEqual(v1, expected);
 }
 
-function mapStatus(status: string): { payment_status: string } | null {
-  if (status === "approved") return { payment_status: "pago" };
-  if (status === "refunded" || status === "charged_back") return { payment_status: "estornado" };
-  if (status === "cancelled" || status === "rejected") return { payment_status: "cancelado" };
+/**
+ * Situação nova do pedido e de quais situações ele pode sair. Os avisos chegam
+ * fora de ordem e são reenviados, então um aviso velho não pode desfazer um
+ * pagamento aprovado depois.
+ */
+function mapStatus(status: string): { payment_status: string; from: string[] } | null {
+  if (status === "approved") return { payment_status: "pago", from: ["aguardando", "cancelado", "pago"] };
+  if (status === "refunded" || status === "charged_back") {
+    return { payment_status: "estornado", from: ["aguardando", "pago"] };
+  }
+  // Cartão recusado ("rejected") não encerra o pedido: a cliente pode tentar de novo na mesma tela.
+  if (status === "cancelled") return { payment_status: "cancelado", from: ["aguardando"] };
   return null;
 }
 
@@ -155,14 +163,27 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
           return new Response("ok");
         }
 
-        const { error: updateError } = await supabaseAdmin
+        const { data: updated, error: updateError } = await supabaseAdmin
           .from("orders")
           .update({
             payment_status: mapped.payment_status,
             payment_reference: String(payment.id ?? dataId),
             payment_provider: "mercadopago",
           })
-          .eq("id", orderId);
+          .eq("id", orderId)
+          .in("payment_status", mapped.from)
+          .select("id");
+
+        if (!updateError && !updated?.length) {
+          await logPaymentEvent({
+            orderId,
+            eventType: "aviso_ignorado",
+            level: "aviso",
+            message: `Aviso do Mercado Pago ("${payment.status}") ignorado: o pedido já está em outra situação.`,
+            payload: payment,
+          });
+          return new Response("ok");
+        }
 
         await logPaymentEvent({
           orderId,

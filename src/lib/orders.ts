@@ -96,12 +96,7 @@ export async function createOrder(input: CheckoutInput): Promise<Order> {
         city: input.address.city,
         state: input.address.state,
       },
-      shipping: {
-        service: input.shipping.service,
-        carrier: input.shipping.carrier,
-        days: input.shipping.days,
-        price: input.shipping.price,
-      },
+      shipping: { id: input.shipping.id, price: input.shipping.price },
       payment_method: input.payment_method,
       notes: input.notes ?? "",
       coupon_code: input.coupon_code ?? "",

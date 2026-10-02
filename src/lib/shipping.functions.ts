@@ -150,19 +150,26 @@ export const quoteShippingLive = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data }): Promise<{ options: LiveQuote[]; error: string | null }> => {
-    const settings = await loadSettings();
-    if (!settings || !settings.enabled || !settings.melhor_envio_token) {
-      return { options: [], error: null };
-    }
-    try {
-      const options = await callMelhorEnvio(settings, data.zip, data.units, data.merchandise);
-      return { options, error: null };
-    } catch (err) {
-      console.error("[melhor-envio]", err);
-      return { options: [], error: "Cálculo automático indisponível." };
-    }
-  });
+  .handler(({ data }) => liveShippingQuotes(data.zip, data.units, data.merchandise));
+
+/** Cotação do Melhor Envio no servidor (também usada para conferir o frete do pedido). */
+export async function liveShippingQuotes(
+  zip: string,
+  units: number,
+  merchandise: number,
+): Promise<{ options: LiveQuote[]; error: string | null }> {
+  const settings = await loadSettings();
+  if (!settings || !settings.enabled || !settings.melhor_envio_token) {
+    return { options: [], error: null };
+  }
+  try {
+    const options = await callMelhorEnvio(settings, zip, units, merchandise);
+    return { options, error: null };
+  } catch (err) {
+    console.error("[melhor-envio]", err);
+    return { options: [], error: "Cálculo automático indisponível." };
+  }
+}
 
 export const getShippingConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

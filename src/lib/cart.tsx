@@ -23,6 +23,8 @@ type CartContextValue = {
   setQuantity: (key: string, quantity: number) => void;
   remove: (key: string) => void;
   clear: () => void;
+  /** Troca os preços guardados pelos atuais e tira da sacola o que saiu de venda. */
+  reprice: (products: Array<{ id: string; price: number; available: boolean }>) => void;
 };
 
 const STORAGE_KEY = "olivetree.cart.v1";
@@ -80,11 +82,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => setItems([]), []);
 
+  const reprice = useCallback<CartContextValue["reprice"]>((products) => {
+    const byId = new Map(products.map((p) => [p.id, p]));
+    setItems((prev) => {
+      const next = prev
+        .filter((i) => byId.get(i.product_id)?.available)
+        .map((i) => ({ ...i, price: byId.get(i.product_id)!.price }));
+      const changed = next.length !== prev.length || next.some((i, k) => i.price !== prev[k]?.price);
+      return changed ? next : prev;
+    });
+  }, []);
+
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((s, i) => s + i.quantity, 0);
     const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-    return { items, count, subtotal, open, setOpen, add, setQuantity, remove, clear };
-  }, [items, open, add, setQuantity, remove, clear]);
+    return { items, count, subtotal, open, setOpen, add, setQuantity, remove, clear, reprice };
+  }, [items, open, add, setQuantity, remove, clear, reprice]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

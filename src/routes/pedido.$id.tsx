@@ -62,16 +62,26 @@ function PedidoPage() {
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
   const [redirecting, setRedirecting] = useState(false);
 
-  const hasLivePayment = Boolean(order?.payment_link);
+  // Com o gateway ligado a cliente sempre paga por ele, mesmo que o link ainda
+  // não exista (ex.: o gateway falhou no checkout) — nada de Pix/boleto simulado.
+  const onlinePayment = Boolean(order?.online_payment);
 
   useEffect(() => {
-    if (!order || order.payment_status === "pago" || order.payment_link) return;
+    if (!order || order.payment_status === "pago" || order.online_payment) return;
     createPayment({
       method: order.payment_method as PaymentMethod,
       total: order.total,
       orderId: order.id,
     }).then(setIntent);
-  }, [order]);
+    // Só recria a simulação quando o pedido muda, não a cada atualização da página.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    order?.id,
+    order?.payment_status,
+    order?.payment_method,
+    order?.total,
+    order?.online_payment,
+  ]);
 
   // Volta da InfinitePay: confirmamos o pagamento pelo código da transação.
   useEffect(() => {
@@ -170,7 +180,7 @@ function PedidoPage() {
             </p>
           )}
 
-          {order.payment_status !== "pago" && !hasLivePayment && intent?.pix_code && (
+          {order.payment_status !== "pago" && !onlinePayment && intent?.pix_code && (
             <div className="mt-4">
               <p className="text-sm">Chave Pix: {intent.pix_key}</p>
               <p className="mt-2 break-all border border-dashed border-border p-3 text-xs text-muted-foreground">
@@ -178,13 +188,13 @@ function PedidoPage() {
               </p>
             </div>
           )}
-          {order.payment_status !== "pago" && !hasLivePayment && intent?.boleto_line && (
+          {order.payment_status !== "pago" && !onlinePayment && intent?.boleto_line && (
             <p className="mt-4 border border-dashed border-border p-3 text-xs text-muted-foreground">
               {intent.boleto_line}
             </p>
           )}
 
-          {order.payment_status !== "pago" && hasLivePayment && (
+          {order.payment_status !== "pago" && onlinePayment && (
             <button
               type="button"
               onClick={payNow}
@@ -195,7 +205,7 @@ function PedidoPage() {
             </button>
           )}
 
-          {order.payment_status !== "pago" && !hasLivePayment && (
+          {order.payment_status !== "pago" && !onlinePayment && (
             <button
               type="button"
               onClick={handleConfirm}

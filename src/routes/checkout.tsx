@@ -1,15 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site-chrome";
 import { StoredImage } from "@/components/stored-image";
+import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/catalog";
 import { MAX_INSTALLMENTS, installmentValue, pixDiscount } from "@/lib/pricing";
 import { createOrder } from "@/lib/orders";
-import { createPayment, PAYMENT_LABEL, type PaymentMethod } from "@/lib/payments";
-import { createGatewayCheckout } from "@/lib/payments.functions";
+import { PAYMENT_LABEL, type PaymentMethod } from "@/lib/payments";
+import { createGatewayCheckout, getPaymentMode } from "@/lib/payments.functions";
 import { validateCoupon } from "@/lib/coupons.functions";
 import { couponDiscount, describeCoupon, normalizeCode, type AppliedCoupon } from "@/lib/coupons";
 import { useServerFn } from "@tanstack/react-start";
@@ -61,7 +63,7 @@ function Step({ n, title, active }: { n: number; title: string; active: boolean 
 
 function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal, clear, reprice } = useCart();
 
   const [step, setStep] = useState(1);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", document: "" });
@@ -80,11 +82,54 @@ function CheckoutPage() {
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [submitting, setSubmitting] = useState(false);
 
+  const loadPaymentMode = useServerFn(getPaymentMode);
+  const { data: paymentMode } = useQuery({
+    queryKey: ["payment-mode"],
+    queryFn: () => loadPaymentMode(),
+  });
+
   const checkCoupon = useServerFn(validateCoupon);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
   const [couponMsg, setCouponMsg] = useState("");
   const [checking, setChecking] = useState(false);
+
+  // A sacola guarda o preço do dia em que a peça foi adicionada; o pedido é
+  // cobrado pelo preço atual do banco, então o resumo precisa mostrar o mesmo.
+  const productIds = [...new Set(items.map((i) => i.product_id))].sort().join(",");
+  useEffect(() => {
+    if (!productIds) return;
+    let cancelled = false;
+    supabase
+      .from("products")
+      .select("id,price,status")
+      .in("id", productIds.split(","))
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        const fresh = data.map((p) => ({
+          id: p.id,
+          price: Number(p.price),
+          available: p.status === "ativo",
+        }));
+        const gone = items.filter((i) => !fresh.find((p) => p.id === i.product_id)?.available);
+        const repriced = items.some((i) =>
+          fresh.find((p) => p.id === i.product_id && p.price !== i.price),
+        );
+        if (gone.length) {
+          toast.error(
+            `Saiu da sacola por estar esgotado ou indisponível: ${gone.map((i) => i.name).join(", ")}.`,
+          );
+        } else if (repriced) {
+          toast.info("Atualizamos os preços da sacola com os valores atuais.");
+        }
+        reprice(fresh);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // `items` muda a cada reprice; só buscamos de novo quando os produtos mudam.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productIds, reprice]);
 
   const cDiscount = couponDiscount(subtotal, coupon);
   const afterCoupon = Math.round((subtotal - cDiscount) * 100) / 100;
@@ -184,24 +229,31 @@ function CheckoutPage() {
         coupon_code: coupon?.code ?? "",
       });
 
-      // Pagamento real (Mercado Pago) quando a loja tiver a chave configurada.
+      // Pagamento real (Mercado Pago / InfinitePay) quando a loja tiver o gateway ligado.
       const checkout = await createGatewayCheckout({ data: { orderId: order.id } });
       if (checkout.url) {
         clear();
         window.location.href = checkout.url;
         return;
       }
+      // O pedido já existe: a página do pedido oferece "Pagar agora" para tentar de novo.
+      if (checkout.error) toast.error(checkout.error);
 
-      await createPayment({ method, total, orderId: order.id });
       clear();
       navigate({ to: "/pedido/$id", params: { id: order.id } });
     } catch (error) {
       console.error(error);
-      const msg = error instanceof Error && /cupom/i.test(error.message) ? error.message : "";
-      if (msg) {
+      const message = error instanceof Error ? error.message : "";
+      if (/cupom/i.test(message)) {
         setCoupon(null);
-        setCouponMsg(msg);
-        toast.error(msg);
+        setCouponMsg(message);
+        toast.error(message);
+      } else if (/frete/i.test(message)) {
+        setStep(2);
+        toast.error(message);
+        void handleCep(address.zip);
+      } else if (/esgotou|unidade\(s\)|disponível/i.test(message)) {
+        toast.error(message);
       } else toast.error("Não foi possível concluir o pedido. Tente novamente.");
     } finally {
       setSubmitting(false);
@@ -412,10 +464,12 @@ function CheckoutPage() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Pagamento em ambiente de teste. A cobrança real será ativada quando o gateway for
-                  conectado.
-                </p>
+                {paymentMode && !paymentMode.online && (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Pagamento em ambiente de teste. A cobrança real será ativada quando o gateway
+                    for conectado.
+                  </p>
+                )}
                 <div className="mt-6 flex gap-3">
                   <button
                     type="button"
